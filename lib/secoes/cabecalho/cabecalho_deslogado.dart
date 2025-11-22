@@ -1,0 +1,49 @@
+import 'package:flutter/material.dart';
+import 'package:benta_lacos/pages/cadastro_login_page.dart';
+
+class CabecalhoDeslogado extends StatelessWidget {
+  const CabecalhoDeslogado({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    // ❌ PROBLEMA RESOLVIDO: Removida a linha 'color: Colors.white' e o 'padding'
+    // O widget retorna diretamente o Row, permitindo que o fundo do widget Pai (Cabecalho) seja visível.
+    return Row(
+      mainAxisAlignment:
+          MainAxisAlignment.end, // Ajustado para ficar na direita
+      mainAxisSize: MainAxisSize.min, // Ajustado para ocupar o mínimo de espaço
+      children: [
+        // LOGIN — ícone + texto SEM FUNDO
+        MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CadastroLoginPage()),
+              );
+            },
+            child: Container(
+              // 🔥 CORREÇÃO 1: Removida a cor branca. O 'color: Colors.transparent' já estava correto.
+              color: Colors.transparent,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: const Row(
+                children: [
+                  Icon(Icons.person, color: Colors.brown),
+                  SizedBox(width: 6),
+                  Text(
+                    "Login",
+                    style: TextStyle(
+                      color: Colors.brown,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}

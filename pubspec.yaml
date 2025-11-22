@@ -1,0 +1,52 @@
+name: benta_lacos
+description: "A new Flutter project."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.8.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+ 
+  firebase_auth_web: ^5.8.14
+  mask_text_input_formatter: ^2.3.0
+
+
+    # Firebase
+  firebase_core: ^2.22.0
+  firebase_auth: ^4.8.0
+  cloud_firestore: ^4.7.0
+
+  # Rede e máscaras
+  http: ^0.13.6
+  brasil_fields: ^1.6.0
+  validatorless: ^1.0.0
+
+  cupertino_icons: ^1.0.8
+  font_awesome_flutter: ^10.9.1
+  url_launcher: ^6.3.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/imagens/carousel/
+    - assets/imagens/logo.png
+    - assets/imagens/produtos/tiaras/
+    - assets/imagens/icons/
+    - assets/imagens/produtos/lacos/
+    - assets/imagens/payments/
+    - assets/imagens/social/
+    - assets/imagens/banner_principal.png
+    - assets/imagens/tela_fundo/
+    - assets/imagens/produtos/lacos/
+    - assets/imagens/produtos/tiaras/
+    - assets/imagens/produtos/tictac/
+

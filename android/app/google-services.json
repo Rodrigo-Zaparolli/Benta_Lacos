@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "367308357028",
+    "project_id": "benta-lacos",
+    "storage_bucket": "benta-lacos.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:367308357028:android:f229effdbde52c73f55531",
+        "android_client_info": {
+          "package_name": "com.example.benta_lacos"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB1weYFDxlHfMV04SsQvVKwlYXs9WSNdTA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
