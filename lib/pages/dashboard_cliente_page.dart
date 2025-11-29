@@ -58,10 +58,10 @@ class _DashboardClientePageState extends State<DashboardClientePage> {
         child: Column(
           children: [
             // Cabecalho agora recebe a função de logout
-            Cabecalho(
-              // Passa a função de logout para o CabecalhoLogado internamente
-              // O Cabecalho vai decidir se mostra logado ou deslogado
-            ),
+            const Cabecalho(
+                // Passa a função de logout para o CabecalhoLogado internamente
+                // O Cabecalho vai decidir se mostra logado ou deslogado
+                ),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(20),
@@ -91,9 +91,9 @@ class _DashboardClientePageState extends State<DashboardClientePage> {
                             style: TextStyle(fontSize: 16),
                           ),
                           const SizedBox(height: 24),
-                          Row(
+                          const Row(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: const [
+                            children: [
                               _DashboardCard(
                                 title: 'Meus Pedidos',
                                 icon: Icons.shopping_bag,

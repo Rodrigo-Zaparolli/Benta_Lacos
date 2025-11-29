@@ -107,8 +107,8 @@ class _CabecalhoState extends State<Cabecalho> {
 
         // ===== MENU INFERIOR =====
         Container(
-          height: 58,
-          padding: const EdgeInsets.symmetric(horizontal: 32),
+          height: 35,
+          padding: const EdgeInsets.symmetric(horizontal: 20),
           decoration: const BoxDecoration(
             color: Color(0xFFFFF3E5),
             boxShadow: [
@@ -119,20 +119,21 @@ class _CabecalhoState extends State<Cabecalho> {
               ),
             ],
           ),
-          child: Row(
+          child: const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
-              _MenuItem("Recém Nascidos"),
-              _MenuItem("Enxoval"),
-              _MenuItem("Menina"),
-              _MenuItem("Menino"),
-              _MenuItem("Acessórios"),
-              _MenuItem("Sapatinhos"),
-              _MenuItem("Coleção Verão"),
-              _MenuItem("Importados"),
-              _MenuItem("Ofertas"),
-              _MenuItem("Personalizados"),
-              _MenuItem("Boas Festas"),
+            children: [
+              _MenuItem(""),
+              _MenuItem(""),
+              _MenuItem(""),
+              _MenuItem(""),
+              _MenuItem("Laços"),
+              _MenuItem("Tiaras"),
+              _MenuItem("Faixinhas"),
+              _MenuItem("Tic-Tac"),
+              _MenuItem(""),
+              _MenuItem(""),
+              _MenuItem(""),
+              _MenuItem(""),
             ],
           ),
         ),
@@ -145,7 +146,7 @@ class _CabecalhoState extends State<Cabecalho> {
 
 class _MenuItem extends StatelessWidget {
   final String title;
-  const _MenuItem(this.title, {super.key});
+  const _MenuItem(this.title);
 
   @override
   Widget build(BuildContext context) {
@@ -168,7 +169,7 @@ class _MenuItem extends StatelessWidget {
 }
 
 class _LogoLink extends StatefulWidget {
-  const _LogoLink({super.key});
+  const _LogoLink();
 
   @override
   State<_LogoLink> createState() => _LogoLinkState();

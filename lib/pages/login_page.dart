@@ -1,14 +1,12 @@
-// login_page.dart
-// Tela de login com Firebase Authentication
-// Funcionalidades: login, reset de senha, criar nova conta, verificação de e-mail e redirecionamento para Dashboard
-// Autor: Rodrigo
-
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:validatorless/validatorless.dart';
 import '../secoes/cabecalho/cabecalho.dart';
 import '../widgets/background_fundo.dart';
+
+// Páginas chamadas por navegação direta
 import 'criar_conta_page.dart';
+import 'reset_senha_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -18,33 +16,26 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  // ============================
-  // Controllers e variáveis de estado
-  // ============================
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
-  final _senhaController = TextEditingController();
+  final _email = TextEditingController();
+  final _senha = TextEditingController();
   bool _loading = false;
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // ============================
-  // Função de login com verificação + redirecionamento
-  // ============================
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _loading = true);
 
     try {
-      // Tentativa de login
-      final userCred = await _auth.signInWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _senhaController.text,
+      final cred = await _auth.signInWithEmailAndPassword(
+        email: _email.text.trim(),
+        password: _senha.text,
       );
 
-      // Verifica se o email foi validado
-      if (!userCred.user!.emailVerified) {
+      // Usuário existe, mas e-mail não verificado
+      if (!cred.user!.emailVerified) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Verifique seu e-mail antes de entrar.'),
@@ -54,56 +45,22 @@ class _LoginPageState extends State<LoginPage> {
         return;
       }
 
-      // Login ok → redireciona para o Dashboard
       if (!mounted) return;
-      Navigator.pushReplacementNamed(context, '/dashboard');
+
+      // OBS: NÃO navegamos manualmente para dashboard.
+      // O RootDecider detecta login e redireciona.
+      Navigator.pushReplacementNamed(context, '/');
     } on FirebaseAuthException catch (e) {
-      String message = 'Erro ao fazer login';
+      String msg = 'Erro ao fazer login';
 
-      if (e.code == 'user-not-found') message = 'Usuário não encontrado';
-      if (e.code == 'wrong-password') message = 'Senha incorreta';
-      if (e.code == 'invalid-email') message = 'E-mail inválido';
+      if (e.code == 'user-not-found') msg = 'Usuário não encontrado';
+      if (e.code == 'wrong-password') msg = 'Senha incorreta';
+      if (e.code == 'invalid-email') msg = 'E-mail inválido';
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(message)));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
-  }
-
-  // ============================
-  // Função para resetar senha
-  // ============================
-  Future<void> _resetSenha() async {
-    if (_emailController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Digite seu e-mail para resetar a senha')),
-      );
-      return;
-    }
-
-    setState(() => _loading = true);
-
-    try {
-      await _auth.sendPasswordResetEmail(email: _emailController.text.trim());
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('E-mail de recuperação enviado!')),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Erro ao enviar e-mail: $e')));
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
-  }
-
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _senhaController.dispose();
-    super.dispose();
   }
 
   @override
@@ -112,7 +69,8 @@ class _LoginPageState extends State<LoginPage> {
       body: BackgroundFundo(
         child: Column(
           children: [
-            const Cabecalho(), // Cabeçalho principal
+            const Cabecalho(),
+
             Expanded(
               child: Center(
                 child: SingleChildScrollView(
@@ -140,16 +98,14 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                               const SizedBox(height: 20),
 
-                              // Campo de e-mail
                               TextFormField(
-                                controller: _emailController,
+                                controller: _email,
                                 decoration: const InputDecoration(
                                   labelText: 'E-mail',
                                   border: OutlineInputBorder(),
                                   filled: true,
                                   fillColor: Color(0xFFF8F5F2),
                                 ),
-                                keyboardType: TextInputType.emailAddress,
                                 validator: Validatorless.multiple([
                                   Validatorless.required('E-mail obrigatório'),
                                   Validatorless.email('E-mail inválido'),
@@ -157,9 +113,8 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                               const SizedBox(height: 12),
 
-                              // Campo de senha
                               TextFormField(
-                                controller: _senhaController,
+                                controller: _senha,
                                 obscureText: true,
                                 decoration: const InputDecoration(
                                   labelText: 'Senha',
@@ -173,7 +128,6 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                               const SizedBox(height: 20),
 
-                              // Botão login
                               _loading
                                   ? const CircularProgressIndicator()
                                   : SizedBox(
@@ -198,7 +152,6 @@ class _LoginPageState extends State<LoginPage> {
                                     ),
                               const SizedBox(height: 12),
 
-                              // Links criar conta / esqueci a senha
                               Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
@@ -216,7 +169,15 @@ class _LoginPageState extends State<LoginPage> {
                                     child: const Text('Criar nova conta'),
                                   ),
                                   TextButton(
-                                    onPressed: _resetSenha,
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) =>
+                                              const ResetSenhaPage(),
+                                        ),
+                                      );
+                                    },
                                     child: const Text('Esqueci a senha'),
                                   ),
                                 ],

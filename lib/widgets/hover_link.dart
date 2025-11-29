@@ -10,8 +10,12 @@ class HoverLink extends StatefulWidget {
     super.key,
     required this.child,
     this.onTap,
-    this.color = Colors.white, // padrão branco
-    this.hoverColor = Colors.blue, // padrão azul se não passar hoverColor
+    this.color = Colors.white,
+    this.hoverColor = Colors.blue,
+    // 🔥 REMOVIDOS OS PARÂMETROS REDUNDANTES QUE CAUSAVAM O ERRO:
+    // required TextStyle hoverStyle,
+    // required TextStyle style,
+    // required String text,
   });
 
   @override

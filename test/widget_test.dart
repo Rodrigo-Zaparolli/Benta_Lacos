@@ -1,30 +1,38 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
+import 'package:benta_lacos/pages/login_page.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:benta_lacos/tema/tema_site.dart';
+import 'package:benta_lacos/pages/home_page.dart';
+import 'package:benta_lacos/pages/home_page.dart';
 
-import 'package:benta_lacos/main.dart';
+// Importações do Firebase
+import 'package:firebase_core/firebase_core.dart';
+import 'package:benta_lacos/firebase/firebase_options.dart'; // Assumindo que este arquivo existe
 
-void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const BentaLacosApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+  // 1. INICIALIZAÇÃO DO FIREBASE CORE
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+  runApp(const BentaLacosApp());
+}
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
-  });
+class BentaLacosApp extends StatelessWidget {
+  const BentaLacosApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Benta Laços',
+      theme: TemaSite.tema, // Usa o tema que você definiu
+      initialRoute:
+          '/login', // Define a rota inicial para a página de Login/Cadastro
+      routes: {
+        '/': (context) => const HomePage(),
+        '/login': (context) =>
+            const LoginPage(), // Rota para a página de Login/Cadastro
+        // Adicione outras rotas aqui, como '/admin', '/minha-conta', etc.
+      },
+    );
+  }
 }

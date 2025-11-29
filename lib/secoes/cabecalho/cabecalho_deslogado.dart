@@ -1,5 +1,5 @@
+import 'package:benta_lacos/pages/login_page.dart';
 import 'package:flutter/material.dart';
-import 'package:benta_lacos/pages/cadastro_login_page.dart';
 
 class CabecalhoDeslogado extends StatelessWidget {
   const CabecalhoDeslogado({super.key});
@@ -20,7 +20,7 @@ class CabecalhoDeslogado extends StatelessWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const CadastroLoginPage()),
+                MaterialPageRoute(builder: (_) => const LoginPage()),
               );
             },
             child: Container(

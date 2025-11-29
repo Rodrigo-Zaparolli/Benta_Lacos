@@ -4,17 +4,18 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.8.1
+  sdk: '>=3.8.1 <4.0.0' # Corrigido o formato do SDK
 
 dependencies:
   flutter:
-    sdk: flutter
- 
+    sdk: flutter # Esta é a única linha que fica aninhada sob 'flutter:'
+    # Pacotes principais, corretamente alinhados sob 'dependencies:'
   firebase_auth_web: ^5.8.14
   mask_text_input_formatter: ^2.3.0
+  flutter_card_swiper: ^4.0.0
+  file_picker: ^6.0.0
 
-
-    # Firebase
+  # Firebase
   firebase_core: ^2.22.0
   firebase_auth: ^4.8.0
   cloud_firestore: ^4.7.0
@@ -24,6 +25,7 @@ dependencies:
   brasil_fields: ^1.6.0
   validatorless: ^1.0.0
 
+  # Ícones e utilidades
   cupertino_icons: ^1.0.8
   font_awesome_flutter: ^10.9.1
   url_launcher: ^6.3.0
@@ -36,6 +38,7 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
+  # Entradas de assets duplicadas foram removidas.
   assets:
     - assets/imagens/carousel/
     - assets/imagens/logo.png
@@ -46,7 +49,3 @@ flutter:
     - assets/imagens/social/
     - assets/imagens/banner_principal.png
     - assets/imagens/tela_fundo/
-    - assets/imagens/produtos/lacos/
-    - assets/imagens/produtos/tiaras/
-    - assets/imagens/produtos/tictac/
-

@@ -8,17 +8,93 @@ import '../secoes/cabecalho/cabecalho_logado.dart';
 import '../secoes/rodape/rodape.dart';
 import 'login_page.dart';
 import '../widgets/background_fundo.dart';
+// Importações Necessárias para o Grid
+import '../models/product.dart';
+import '../repository/product_repository.dart'; // Assumindo que o repositório existe
+import '../cards/laco_card.dart'; // Usamos o card para exibir o produto na grade
+import '../tema/tema_site.dart';
 
 class DashboardAdminPage extends StatelessWidget {
   const DashboardAdminPage({super.key});
 
+  // Simula a obtenção da lista de produtos (Substitua pela sua lógica real)
+  List<Product> _getProducts() {
+    // 🔥 Substitua o try-catch pela sua lógica real de obtenção de dados
+    try {
+      // Tenta obter a lista do repositório
+      return ProductRepository.instance.products.cast<Product>();
+    } catch (e) {
+      // Se houver erro ou ProductRepository não estiver pronto, retorna lista vazia
+      return [];
+    }
+  }
+
+  // WIDGET DEDICADO À EXIBIÇÃO DA GRADE DE PRODUTOS
+  Widget _buildProductGrid(BuildContext context, List<Product> products) {
+    if (products.isEmpty) {
+      return const Center(
+        child: Text(
+          'Nenhum produto cadastrado para exibir.',
+          style: TextStyle(fontSize: 18, color: Colors.brown),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Todos os Produtos Cadastrados (${products.length} itens)',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: TemaSite.corSecundaria,
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // 🔥 GridView.builder com 3 Colunas
+          Expanded(
+            child: GridView.builder(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3, // <--- CHAVE: 3 COLUNAS FIXAS
+                crossAxisSpacing: 25, // Espaçamento horizontal entre os cards
+                mainAxisSpacing: 25, // Espaçamento vertical entre os cards
+                childAspectRatio:
+                    0.65, // Proporção Altura/Largura do Card (ajuste conforme necessário)
+              ),
+              itemCount: products.length,
+              itemBuilder: (context, index) {
+                final product = products[index];
+
+                // Utilizamos o LacoCard para exibir o produto na grade
+                return LacoCard(
+                  product: product,
+                  // TODO: Adicionar lógica para o onTap que leva o Admin para a tela de Edição/Deleção
+                  onTap: () {
+                    // Exemplo de navegação para a edição
+                    // Navigator.of(context).push(MaterialPageRoute(builder: (_) => ProductEditPage(product: product)));
+                  },
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final products = _getProducts();
+
     return Scaffold(
       body: BackgroundFundo(
         child: Column(
           children: [
-            // Cabeçalho já usando email fictício
+            // Cabeçalho
             CabecalhoLogado(
               email: "admin@benta.com",
               onLogout: () {
@@ -29,58 +105,29 @@ class DashboardAdminPage extends StatelessWidget {
               },
             ),
 
+            // CONTEÚDO PRINCIPAL: GRADE DE PRODUTOS
             Expanded(
               child: Center(
                 child: Container(
-                  width: 900,
-                  padding: const EdgeInsets.all(40),
+                  width:
+                      1200, // Aumenta a largura máxima para dar mais espaço à grade
+                  padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.85),
+                    color: Colors.white.withOpacity(0.95),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: const [
                       BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 10,
-                        spreadRadius: 2,
-                        offset: Offset(0, 4),
+                        color: Colors.black12,
+                        blurRadius: 15,
+                        offset: Offset(0, 5),
                       ),
                     ],
                   ),
-                  child: Column(
-                    children: [
-                      const Text(
-                        "Painel Administrativo",
-                        style: TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.brown,
-                        ),
-                      ),
-                      const SizedBox(height: 30),
-
-                      // Cards do Dashboard
-                      Wrap(
-                        spacing: 25,
-                        runSpacing: 25,
-                        children: [
-                          _adminCard(Icons.shopping_bag, "Produtos", () {}),
-                          _adminCard(Icons.local_offer, "Promoções", () {}),
-                          _adminCard(Icons.people, "Clientes", () {}),
-                          _adminCard(Icons.receipt_long, "Pedidos", () {}),
-                          _adminCard(Icons.settings, "Configurações", () {}),
-                          _adminCard(
-                            Icons.dashboard_customize,
-                            "Conteúdo",
-                            () {},
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                  // Chama o novo widget de grade
+                  child: _buildProductGrid(context, products),
                 ),
               ),
             ),
-
             const Rodape(),
           ],
         ),
@@ -88,44 +135,6 @@ class DashboardAdminPage extends StatelessWidget {
     );
   }
 
-  /// ---- CARD BASE PARA O DASHBOARD ----
-  static Widget _adminCard(IconData icon, String title, VoidCallback onTap) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          width: 260,
-          height: 150,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: Colors.brown.shade200),
-            boxShadow: const [
-              BoxShadow(
-                color: Colors.black12,
-                blurRadius: 8,
-                offset: Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 45, color: Colors.brown),
-              const SizedBox(height: 10),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.brown,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  // NOTE: O método '_adminCard' original foi removido, pois o grid
+  // de produtos agora ocupa a área central do dashboard.
 }
