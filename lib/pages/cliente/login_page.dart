@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:validatorless/validatorless.dart';
-import '../secoes/cabecalho/cabecalho.dart';
-import '../widgets/background_fundo.dart';
+import '../../secoes/cabecalho/cabecalho.dart';
+import '../../widgets/background_fundo.dart';
 
 // Páginas chamadas por navegação direta
 import 'criar_conta_page.dart';

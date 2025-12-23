@@ -1,10 +1,9 @@
-// lib/widgets/product_form.dart
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
-import '../models/product.dart';
-import '../tema/tema_site.dart';
-import '../utils/currency_input_formatter.dart';
+import '../../tema/tema_site.dart';
+import '../../models/product.dart';
+import '../../utils/currency_input_formatter.dart';
 
 class ProductForm extends StatefulWidget {
   final Product? product;
@@ -19,434 +18,310 @@ class ProductForm extends StatefulWidget {
 class _ProductFormState extends State<ProductForm> {
   final _formKey = GlobalKey<FormState>();
 
-  late String _name;
-  late double _price;
-  late double _oldPrice;
-  late String _color;
-  late String _description;
-  late String _composition;
-  late String _imageName;
+  // Categorias atualizadas conforme solicitado
+  final List<String> _categorias = [
+    'Laços',
+    'Tiaras',
+    'Presilhas',
+    'Kits',
+    'Faixas',
+  ];
 
+  late TextEditingController _nomeController;
+  late TextEditingController _precoController;
+  late TextEditingController _corController;
+  late TextEditingController _compositionController;
+  late TextEditingController _descricaoController;
+
+  String? _categoriaSelecionada;
   Uint8List? _imageBytes;
-  late String _imagePath;
-  List<Uint8List> _galleryImages = [];
-
-  final _priceController = TextEditingController();
-  final _oldPriceController = TextEditingController();
-  final _assetController = TextEditingController();
-  final _imageNameController = TextEditingController();
-  final _nameController = TextEditingController();
-  final _colorController = TextEditingController();
-  final _compositionController = TextEditingController();
-  final _descriptionController = TextEditingController();
-
-  void _initializeState(Product? p) {
-    _name = p?.name ?? '';
-    _price = p?.price ?? 0.0;
-    _oldPrice = p?.oldPrice ?? 0.0;
-    _color = p?.color ?? '';
-    _description = p?.description ?? '';
-    _composition = p?.composition ?? '';
-    _imageName = p?.imageName ?? '';
-
-    _imageBytes = p?.imageBytes;
-    _imagePath = p?.imagePath ?? '';
-    _galleryImages = p?.galleryImages ?? [];
-
-    _priceController.text = _price.toStringAsFixed(2).replaceAll('.', ',');
-    _oldPriceController.text = (_oldPrice > 0 ? _oldPrice : 0.0)
-        .toStringAsFixed(2)
-        .replaceAll('.', ',');
-    _assetController.text = _imagePath;
-    _imageNameController.text = _imageName;
-    _nameController.text = _name;
-    _colorController.text = _color;
-    _compositionController.text = _composition;
-    _descriptionController.text = _description;
-  }
+  String? _imageName;
 
   @override
   void initState() {
     super.initState();
-    _initializeState(widget.product);
-  }
-
-  @override
-  void didUpdateWidget(covariant ProductForm oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.product != oldWidget.product) {
-      _initializeState(widget.product);
-      setState(() {});
-    }
+    final p = widget.product;
+    _nomeController = TextEditingController(text: p?.name ?? '');
+    _precoController = TextEditingController(
+      text: p?.price.toStringAsFixed(2).replaceAll('.', ',') ?? '',
+    );
+    _corController = TextEditingController(text: p?.color ?? '');
+    _compositionController = TextEditingController(text: p?.composition ?? '');
+    _descricaoController = TextEditingController(text: p?.description ?? '');
+    _categoriaSelecionada = p?.category;
+    _imageBytes = p?.imageBytes;
+    _imageName = p?.imageName;
   }
 
   @override
   void dispose() {
-    _priceController.dispose();
-    _oldPriceController.dispose();
-    _assetController.dispose();
-    _imageNameController.dispose();
-    _nameController.dispose();
-    _colorController.dispose();
+    _nomeController.dispose();
+    _precoController.dispose();
+    _corController.dispose();
     _compositionController.dispose();
-    _descriptionController.dispose();
+    _descricaoController.dispose();
     super.dispose();
   }
 
-  void _pickFile() async {
+  Future<void> _pickFile() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.image,
-      allowMultiple: false,
       withData: true,
     );
-
     if (result != null) {
       setState(() {
         _imageBytes = result.files.single.bytes;
         _imageName = result.files.single.name;
-        _imageNameController.text = _imageName;
-        _imagePath = '';
-        _assetController.text = '';
       });
     }
   }
 
-  Future<void> _pickGalleryImages() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.image,
-      allowMultiple: true,
-      withData: true,
-    );
-
-    if (result != null && result.files.isNotEmpty) {
-      setState(() {
-        _galleryImages = result.files
-            .map((f) => f.bytes!)
-            .whereType<Uint8List>()
-            .toList();
-      });
-    }
-  }
-
-  void _submit() {
+  void _handleSave() {
     if (_formKey.currentState!.validate()) {
-      _formKey.currentState!.save();
+      final double precoConvertido =
+          double.tryParse(
+            _precoController.text.replaceAll('.', '').replaceAll(',', '.'),
+          ) ??
+          0.0;
 
-      final newProduct = Product(
-        id: widget.product?.id ?? UniqueKey().toString(),
-        name: _name,
-        price: _price,
-        oldPrice: _oldPrice > 0 ? _oldPrice : null,
-        color: _color,
-        description: _description,
-        composition: _composition,
-        imageName: _imageName,
+      final product = Product(
+        id:
+            widget.product?.id ??
+            DateTime.now().millisecondsSinceEpoch.toString(),
+        name: _nomeController.text.trim(),
+        price: precoConvertido,
+        category: _categoriaSelecionada,
+        color: _corController.text.trim(),
+        composition: _compositionController.text.trim(),
+        description: _descricaoController.text.trim(),
         imageBytes: _imageBytes,
-        imagePath: _imagePath.isNotEmpty && _imageBytes == null
-            ? _imagePath
-            : null,
-        galleryImages: _galleryImages.isNotEmpty ? _galleryImages : null,
+        imageName: _imageName,
       );
-      widget.onSave(newProduct);
+      widget.onSave(product);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final editing = widget.product != null;
-    const double spacing = 30.0;
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(32.0),
+    return Container(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+        left: 20,
+        right: 20,
+        top: 10,
+      ),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+      ),
       child: Form(
         key: _formKey,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final double totalWidth = constraints.maxWidth;
-
-            // 3 colunas exigem 2 espaçamentos (2 * 30.0 = 60.0).
-            final double calculatedFieldWidth =
-                (totalWidth - (spacing * 2)) / 3;
-
-            // Subtrai uma pequena margem (2.0) para evitar quebras de arredondamento.
-            final double safeFieldWidth = calculatedFieldWidth - 2.0;
-
-            // Se a tela for estreita (abaixo de um limite), usa largura total.
-            final double effectiveFieldWidth = (safeFieldWidth > 150)
-                ? safeFieldWidth
-                : totalWidth;
-
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  editing ? 'Editar Produto' : 'Cadastrar Novo Produto',
-                  style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // ----------------------------------------------------
-                // SEÇÃO DE CAMPOS DE TEXTO (3 COLUNAS - WRAP)
-                // ----------------------------------------------------
-                Wrap(
-                  spacing: spacing,
-                  runSpacing: 20.0,
-                  children: [
-                    // Nome do Produto (Campo 1)
-                    SizedBox(
-                      width: effectiveFieldWidth,
-                      child: TextFormField(
-                        controller: _nameController,
-                        decoration: const InputDecoration(
-                          labelText: 'Nome do Produto',
-                        ),
-                        validator: (v) =>
-                            v!.isEmpty ? 'O nome é obrigatório.' : null,
-                        onSaved: (v) => _name = v!.trim(),
-                      ),
-                    ),
-                    // Preço (Campo 2)
-                    SizedBox(
-                      width: effectiveFieldWidth,
-                      child: TextFormField(
-                        controller: _priceController,
-                        decoration: const InputDecoration(
-                          labelText: 'Preço (R\$)',
-                        ),
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        inputFormatters: [CurrencyInputFormatter()],
-                        validator: (v) =>
-                            v!.isEmpty ? 'O preço é obrigatório.' : null,
-                        onSaved: (v) {
-                          final cleanedValue = v!.replaceAll(',', '.');
-                          _price = double.tryParse(cleanedValue) ?? 0.0;
-                        },
-                      ),
-                    ),
-                    // Preço Antigo (Campo 3)
-                    SizedBox(
-                      width: effectiveFieldWidth,
-                      child: TextFormField(
-                        controller: _oldPriceController,
-                        decoration: const InputDecoration(
-                          labelText: 'Preço Antigo (Opcional)',
-                        ),
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        inputFormatters: [CurrencyInputFormatter()],
-                        onSaved: (v) {
-                          final cleanedValue = v!.replaceAll(',', '.');
-                          _oldPrice = double.tryParse(cleanedValue) ?? 0.0;
-                        },
-                      ),
-                    ),
-                    // Cor (Campo 4)
-                    SizedBox(
-                      width: effectiveFieldWidth,
-                      child: TextFormField(
-                        controller: _colorController,
-                        decoration: const InputDecoration(labelText: 'Cor'),
-                        validator: (v) =>
-                            v!.isEmpty ? 'A cor é obrigatória.' : null,
-                        onSaved: (v) => _color = v!.trim(),
-                      ),
-                    ),
-                    // Composição (Campo 5)
-                    SizedBox(
-                      width: effectiveFieldWidth,
-                      child: TextFormField(
-                        controller: _compositionController,
-                        decoration: const InputDecoration(
-                          labelText: 'Composição',
-                        ),
-                        validator: (v) =>
-                            v!.isEmpty ? 'A composição é obrigatória.' : null,
-                        onSaved: (v) => _composition = v!.trim(),
-                      ),
-                    ),
-                    // Caminho da Imagem (Asset/URL) (Campo 6)
-                    SizedBox(
-                      width: effectiveFieldWidth,
-                      child: TextFormField(
-                        controller: _assetController,
-                        decoration: const InputDecoration(
-                          labelText: 'Caminho Imagem (Asset/URL)',
-                        ),
-                        onSaved: (v) => _imagePath = v!.trim(),
-                      ),
-                    ),
-                    // Nome da Imagem (Campo 7)
-                    SizedBox(
-                      width: effectiveFieldWidth,
-                      child: TextFormField(
-                        controller: _imageNameController,
-                        decoration: const InputDecoration(
-                          labelText: 'Nome da Imagem',
-                        ),
-                        onSaved: (v) => _imageName = v!.trim(),
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 20),
-
-                // Descrição (Full-Width)
-                TextFormField(
-                  controller: _descriptionController,
-                  decoration: const InputDecoration(
-                    labelText: 'Descrição do Produto',
-                  ),
-                  maxLines: 4,
-                  validator: (v) =>
-                      v!.isEmpty ? 'A descrição é obrigatória.' : null,
-                  onSaved: (v) => _description = v!.trim(),
-                ),
-
-                const SizedBox(height: 30),
-                const Divider(),
-
-                // ----------------------------------------------------
-                // SEÇÃO DE IMAGEM PRINCIPAL
-                // ----------------------------------------------------
-                const SizedBox(height: 20),
-                const Text(
-                  'Imagem Principal (Destaque)',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 15),
-
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      height: 200,
-                      width: 250,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade300),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: _imageBytes != null
-                            ? Image.memory(_imageBytes!, fit: BoxFit.cover)
-                            : _imagePath.isNotEmpty
-                            ? Image.network(
-                                _imagePath,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) =>
-                                    const Center(child: Text('URL Inválida')),
-                              )
-                            : const Center(child: Text('Principal')),
-                      ),
-                    ),
-
-                    const SizedBox(width: 30),
-
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8.0),
-                      child: ElevatedButton.icon(
-                        onPressed: _pickFile,
-                        icon: const Icon(Icons.upload_file),
-                        label: const Text('Selecionar Principal'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: TemaSite.corPrimaria,
-                          foregroundColor: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 30),
-                const Divider(),
-
-                // ----------------------------------------------------
-                // SEÇÃO DE GALERIA (IMAGENS SECUNDÁRIAS)
-                // ----------------------------------------------------
-                const SizedBox(height: 20),
-                const Text(
-                  'Galeria de Imagens Secundárias',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 15),
-
-                Row(
-                  children: [
-                    ElevatedButton.icon(
-                      onPressed: _pickGalleryImages,
-                      icon: const Icon(Icons.collections),
-                      label: Text(
-                        _galleryImages.isEmpty
-                            ? 'Selecionar Galeria'
-                            : 'Mudar Galeria (${_galleryImages.length})',
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: TemaSite.corDestaque,
-                        foregroundColor: Colors.white,
-                      ),
-                    ),
-                    if (_galleryImages.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(left: 8.0),
-                        child: TextButton(
-                          onPressed: () => setState(() => _galleryImages = []),
-                          child: Text(
-                            'Remover Galeria',
-                            style: TextStyle(color: TemaSite.corSecundaria),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-
-                const SizedBox(height: 20),
-
-                // MINIATURAS DA GALERIA
-                Wrap(
-                  spacing: 15.0,
-                  runSpacing: 15.0,
-                  children: _galleryImages.map((bytes) {
-                    return Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade300),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.memory(bytes, fit: BoxFit.cover),
-                      ),
-                    );
-                  }).toList(),
-                ),
-
-                const SizedBox(height: 40),
-
-                // BOTÃO DE SUBMIT
-                ElevatedButton.icon(
-                  onPressed: _submit,
-                  icon: const Icon(Icons.check),
-                  label: Text(editing ? 'Salvar' : 'Cadastrar'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: TemaSite.corPrimaria,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 28,
-                      vertical: 14,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHandle(),
+              _buildTitle(), // Título: Novo Produto
+              const SizedBox(height: 25),
+              _buildTextField(
+                _nomeController,
+                "Nome do Produto",
+                Icons.shopping_bag_outlined,
+              ),
+              const SizedBox(height: 15),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: _buildTextField(
+                      _precoController,
+                      "Preço Venda",
+                      Icons.sell_outlined,
+                      isNumber: true,
                     ),
                   ),
-                ),
-              ],
-            );
-          },
+                  const SizedBox(width: 15),
+                  Expanded(child: _buildDropdownField()), // Campo de Categoria
+                ],
+              ),
+              const SizedBox(height: 15),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildTextField(
+                      _corController,
+                      "Cor Principal",
+                      Icons.palette_outlined,
+                    ),
+                  ),
+                  const SizedBox(width: 15),
+                  Expanded(
+                    child: _buildTextField(
+                      _compositionController,
+                      "Material/Fita",
+                      Icons.straighten_outlined,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 15),
+              _buildTextField(
+                _descricaoController,
+                "Descrição Detalhada",
+                Icons.description_outlined,
+                maxLines: 3,
+              ),
+              const SizedBox(height: 25),
+              const Text(
+                "Imagens do Produto",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const SizedBox(height: 10),
+              _buildImageSelector(),
+              const SizedBox(height: 30),
+              _buildSaveButton(),
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHandle() => Center(
+    child: Container(
+      width: 40,
+      height: 4,
+      margin: const EdgeInsets.only(bottom: 20),
+      decoration: BoxDecoration(
+        color: Colors.grey[300],
+        borderRadius: BorderRadius.circular(10),
+      ),
+    ),
+  );
+
+  Widget _buildTitle() => Row(
+    children: [
+      const Text("🛍️", style: TextStyle(fontSize: 24)),
+      const SizedBox(width: 10),
+      Text(
+        widget.product == null ? "Novo Produto" : "Editar Produto",
+        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+      ),
+    ],
+  );
+
+  Widget _buildTextField(
+    TextEditingController controller,
+    String label,
+    IconData icon, {
+    bool isNumber = false,
+    int maxLines = 1,
+  }) {
+    return TextFormField(
+      controller: controller,
+      maxLines: maxLines,
+      keyboardType: isNumber
+          ? const TextInputType.numberWithOptions(decimal: true)
+          : TextInputType.text,
+      inputFormatters: isNumber ? [CurrencyInputFormatter()] : [],
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, color: TemaSite.corPrimaria, size: 22),
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+      ),
+      validator: (value) =>
+          value == null || value.isEmpty ? "Obrigatório" : null,
+    );
+  }
+
+  Widget _buildDropdownField() {
+    return DropdownButtonFormField<String>(
+      value: _categoriaSelecionada,
+      decoration: InputDecoration(
+        labelText: "Categoria",
+        prefixIcon: Icon(
+          Icons.category_outlined,
+          color: TemaSite.corPrimaria,
+          size: 22,
+        ),
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+      ),
+      items: _categorias
+          .map((cat) => DropdownMenuItem(value: cat, child: Text(cat)))
+          .toList(),
+      onChanged: (val) => setState(() => _categoriaSelecionada = val),
+      validator: (value) => value == null ? "Selecione" : null,
+    );
+  }
+
+  Widget _buildImageSelector() {
+    return Row(
+      children: [
+        GestureDetector(
+          onTap: _pickFile,
+          child: Container(
+            width: 100,
+            height: 100,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(15),
+              border: Border.all(color: Colors.grey.shade300),
+            ),
+            child: _imageBytes != null
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(15),
+                    child: Image.memory(_imageBytes!, fit: BoxFit.cover),
+                  )
+                : const Icon(
+                    Icons.add_a_photo_outlined,
+                    color: Colors.grey,
+                    size: 30,
+                  ),
+          ),
+        ),
+        const SizedBox(width: 15),
+        const Expanded(
+          child: Text(
+            "Toque no quadrado para selecionar a foto principal.",
+            style: TextStyle(fontSize: 12, color: Colors.grey),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSaveButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 55,
+      child: ElevatedButton(
+        onPressed: _handleSave,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: TemaSite.corPrimaria,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          elevation: 0,
+        ),
+        child: const Text(
+          "SALVAR PRODUTO",
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+          ),
         ),
       ),
     );

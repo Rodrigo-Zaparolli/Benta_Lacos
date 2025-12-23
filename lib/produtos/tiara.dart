@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:benta_lacos/pages/home_page.dart';
+import 'package:benta_lacos/pages/cliente/home_page.dart';
 import 'package:benta_lacos/secoes/cabecalho/cabecalho.dart';
 import 'package:benta_lacos/secoes/rodape/rodape.dart';
 import 'package:benta_lacos/widgets/background_fundo.dart'; // Importa o widget reutilizável de fundo

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../produtos/tiara.dart'; // Página da Tiara
+import '../../produtos/tiara.dart'; // Página da Tiara
 
 class TiaraCard extends StatefulWidget {
   const TiaraCard({super.key});

@@ -1,8 +1,10 @@
 // lib/produtos/laco.dart
 import 'dart:typed_data';
 import 'package:benta_lacos/models/product.dart';
+import 'package:benta_lacos/models/providers/cart_provider.dart';
 import 'package:benta_lacos/secoes/carrossel/carrossel_veja.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart' show ReadContext;
 import 'package:url_launcher/url_launcher.dart';
 import '../tema/tema_site.dart';
 import '../secoes/cabecalho/cabecalho.dart';
@@ -237,7 +239,7 @@ class _OpcoesCompraState extends State<OpcoesCompra> {
             children: [
               Icon(Icons.local_shipping_outlined, color: Colors.black54),
               const SizedBox(width: 8),
-              Text(
+              const Text(
                 'Meios de envio',
                 style: TextStyle(
                   fontSize: 18,
@@ -345,6 +347,7 @@ class _OpcoesCompraState extends State<OpcoesCompra> {
         LayoutBuilder(
           builder: (context, constraints) {
             final isVeryNarrow = constraints.maxWidth < 300;
+
             Widget quantityField = SizedBox(
               width: 80,
               child: TextFormField(
@@ -365,15 +368,21 @@ class _OpcoesCompraState extends State<OpcoesCompra> {
                 },
               ),
             );
+
             Widget buyButton = Expanded(
               child: ElevatedButton(
                 onPressed: () {
+                  // 1. ADICIONA AO CARRINHO VIA PROVIDER
+                  context.read<CartProvider>().addItem(product, _quantidade);
+
+                  // 2. ABRE A GAVETA LATERAL DO CARRINHO (END DRAWER)
+                  Scaffold.of(context).openEndDrawer();
+
+                  // 3. Feedback rápido
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        'Adicionado! $_quantidade x ${product.name} ($_corSelecionada)',
-                      ),
-                      backgroundColor: config.carrinhoBotaoFundo,
+                    const SnackBar(
+                      content: Text('Adicionado ao carrinho!'),
+                      duration: Duration(seconds: 1),
                     ),
                   );
                 },
@@ -390,6 +399,7 @@ class _OpcoesCompraState extends State<OpcoesCompra> {
                 ),
               ),
             );
+
             if (isVeryNarrow) {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -414,7 +424,7 @@ class _OpcoesCompraState extends State<OpcoesCompra> {
           crossFadeState: _isShippingExpanded
               ? CrossFadeState.showSecond
               : CrossFadeState.showFirst,
-          firstChild: const SizedBox(height: 0),
+          firstChild: const SizedBox(height: 0, width: double.infinity),
           secondChild: const Padding(
             padding: EdgeInsets.only(top: 15.0),
             child: MeiosEnvioSection(),
@@ -527,7 +537,7 @@ class _LacoPageState extends State<LacoPage> {
                   children: [
                     Expanded(
                       child: Text(
-                        'Loja Laço de Menina',
+                        'Loja Benta Laços',
                         style: TextStyle(
                           color: theme.carrinhoBotaoTexto,
                           fontWeight: FontWeight.bold,

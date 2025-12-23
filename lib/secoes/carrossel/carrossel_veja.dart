@@ -3,15 +3,12 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 
-// Paleta e fontes centralizadas no TemaSite
+// Importações do seu projeto
 import 'package:benta_lacos/tema/tema_site.dart';
-
-// Repositório de produtos
 import 'package:benta_lacos/repository/product_repository.dart';
+import 'package:benta_lacos/cards/categorias/lacos_card.dart';
+import 'package:benta_lacos/produtos/laco.dart'; // Para abrir a LacoPage
 
-// ===============================================================
-//   CARROSSEL DE PRODUTOS SUGERIDOS
-// ===============================================================
 class SuggestedProductsCarousel extends StatefulWidget {
   const SuggestedProductsCarousel({super.key});
 
@@ -21,8 +18,6 @@ class SuggestedProductsCarousel extends StatefulWidget {
 }
 
 class _SuggestedProductsCarouselState extends State<SuggestedProductsCarousel> {
-  late final List<dynamic> _suggestedProducts;
-
   late PageController _pageController;
   late Timer _timer;
   int _currentPage = 0;
@@ -31,27 +26,26 @@ class _SuggestedProductsCarouselState extends State<SuggestedProductsCarousel> {
   void initState() {
     super.initState();
 
-    _suggestedProducts = ProductRepository.instance.products.take(4).toList();
-
-    // 1. ATUALIZAÇÃO CHAVE: viewportFraction para exibir 3 cards
+    // Configuração do Controller: exibe 3 cards por vez
     _pageController = PageController(
       initialPage: _currentPage,
-      // Cada 'página' ocupa 1/3 da largura total, mostrando 3 cards.
       viewportFraction: 1 / 3,
     );
 
     _pageController.addListener(_onPageChanged);
 
+    // Timer para passar os slides automaticamente
     _timer = Timer.periodic(const Duration(seconds: 4), (timer) {
-      if (!_pageController.hasClients || _suggestedProducts.isEmpty) return;
+      final products = ProductRepository.instance.products;
+      if (!_pageController.hasClients || products.isEmpty) return;
 
-      final nextPage = _currentPage < _suggestedProducts.length - 1
+      final nextPage = _currentPage < products.length - 1
           ? _currentPage + 1
           : 0;
 
       _pageController.animateToPage(
         nextPage,
-        duration: const Duration(milliseconds: 400),
+        duration: const Duration(milliseconds: 500),
         curve: Curves.easeInOut,
       );
     });
@@ -59,12 +53,8 @@ class _SuggestedProductsCarouselState extends State<SuggestedProductsCarousel> {
 
   void _onPageChanged() {
     if (!_pageController.hasClients || _pageController.page == null) return;
-
     setState(() {
-      _currentPage = _pageController.page!.round().clamp(
-        0,
-        _suggestedProducts.length - 1,
-      );
+      _currentPage = _pageController.page!.round();
     });
   }
 
@@ -76,273 +66,139 @@ class _SuggestedProductsCarouselState extends State<SuggestedProductsCarousel> {
     super.dispose();
   }
 
-  // ---------------------------------------------------------------
-  // Indicadores (bolinhas)
-  // ---------------------------------------------------------------
-  Widget _buildDot(int index) {
-    return Container(
-      width: 10,
-      height: 10,
+  // Bolinhas indicadoras
+  Widget _buildDot(int index, int total) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      width: _currentPage == index ? 12 : 8,
+      height: 8,
       margin: const EdgeInsets.symmetric(horizontal: 4),
       decoration: BoxDecoration(
-        shape: BoxShape.circle,
+        borderRadius: BorderRadius.circular(4),
         color: _currentPage == index
-            ? TemaSite
-                  .corPrimaria // bolinha ativa
-            : TemaSite.corSecundaria.withOpacity(0.3), // inativa
+            ? TemaSite.corPrimaria
+            : TemaSite.corSecundaria.withOpacity(0.3),
       ),
     );
   }
 
-  // ---------------------------------------------------------------
-  // Botões das setas
-  // ---------------------------------------------------------------
-  Widget _buildArrowButton({
+  // Setas Laterais
+  Widget _buildArrow({
     required IconData icon,
-    required VoidCallback onPressed,
+    required Alignment alignment,
+    required VoidCallback onTap,
   }) {
-    // Retorna um widget vazio se houver apenas um card para evitar setas desnecessárias
-    if (_suggestedProducts.length <= 1) return const SizedBox.shrink();
-
-    return Container(
-      decoration: BoxDecoration(
-        color: TemaSite.corSecundaria.withOpacity(0.2),
-        shape: BoxShape.circle,
-      ),
-      child: IconButton(
-        icon: Icon(icon, color: TemaSite.corPrimaria, size: 22),
-        onPressed: onPressed,
+    return Align(
+      alignment: alignment,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 5),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(50),
+          child: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.7),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: TemaSite.corPrimaria, size: 20),
+          ),
+        ),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_suggestedProducts.isEmpty) {
-      return const SizedBox.shrink();
-    }
+    return ListenableBuilder(
+      listenable: ProductRepository.instance,
+      builder: (context, child) {
+        final products = ProductRepository.instance.products;
 
-    return Center(
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 1200),
-        padding: const EdgeInsets.symmetric(vertical: 25),
-        child: Column(
-          children: [
-            // -------------------------------------------------
-            // TÍTULO
-            // -------------------------------------------------
-            Text(
-              'aproveite e LEVE TAMBÉM',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                fontFamily: TemaSite.fontePrincipal,
-                color: TemaSite.corSecundaria,
-              ),
-            ),
-            const SizedBox(height: 20),
+        if (products.isEmpty) return const SizedBox.shrink();
 
-            SizedBox(
-              height: 400,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  // -------------------------------------------------
-                  // PageView com os cards
-                  // -------------------------------------------------
-                  PageView.builder(
-                    controller: _pageController,
-                    itemCount: _suggestedProducts.length,
-                    itemBuilder: (_, index) {
-                      // Simplificado: Retorna o card diretamente para ocupar o viewportFraction (1/3)
-                      return ProductSuggestionCard(
-                        product: _suggestedProducts[index],
-                      );
-                    },
-                  ),
-
-                  // -------------------------------------------------
-                  // Setas
-                  // -------------------------------------------------
-                  Positioned(
-                    left: 10, // Adicionado padding para afastar da borda
-                    child: _buildArrowButton(
-                      icon: Icons.arrow_back_ios_new,
-                      onPressed: () {
-                        _pageController.previousPage(
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeOut,
-                        );
-                      },
-                    ),
-                  ),
-                  Positioned(
-                    right: 10, // Adicionado padding para afastar da borda
-                    child: _buildArrowButton(
-                      icon: Icons.arrow_forward_ios,
-                      onPressed: () {
-                        _pageController.nextPage(
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeIn,
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            // -------------------------------------------------
-            // Bolinhas indicadoras
-            // -------------------------------------------------
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(
-                _suggestedProducts.length,
-                (i) => _buildDot(i),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ===============================================================
-// CARD DE PRODUTO (Ajustado para espaçamento)
-// ===============================================================
-class ProductSuggestionCard extends StatelessWidget {
-  final dynamic product;
-  const ProductSuggestionCard({super.key, required this.product});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      // 2. ATUALIZAÇÃO CHAVE: Removida a largura fixa e adicionado margin
-      margin: const EdgeInsets.symmetric(horizontal: 10),
-      // width: 280, // <-- REMOVIDO para que o card se adapte ao 1/3 do PageView
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(
-          color: TemaSite.corPrimaria.withOpacity(0.4),
-          width: 1.4,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: TemaSite.corSecundaria.withOpacity(0.15),
-            blurRadius: 6,
-            spreadRadius: 1,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // IMAGEM
-          Expanded(
-            child: ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(15),
-              ),
-              child: Image.asset(
-                product.imagePath,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) =>
-                    Icon(Icons.broken_image, color: TemaSite.corPrimaria),
-              ),
-            ),
-          ),
-
-          // DADOS DO PRODUTO
-          Padding(
-            padding: const EdgeInsets.all(12),
+        return Center(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 1200),
+            padding: const EdgeInsets.symmetric(vertical: 40),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Nome
+                // Título da Seção
                 Text(
-                  product.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  'aproveite e LEVE TAMBÉM',
                   style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
                     fontFamily: TemaSite.fontePrincipal,
                     color: TemaSite.corSecundaria,
-                    fontSize: 14,
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 30),
 
-                // Preço antigo (se houver)
-                if (product.oldPrice > product.price)
-                  Text(
-                    'R\$ ${product.oldPrice.toStringAsFixed(2)}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      decoration: TextDecoration.lineThrough,
-                      color: TemaSite.corSecundaria.withOpacity(0.6),
-                    ),
-                  ),
+                // Área do PageView
+                SizedBox(
+                  height: 480,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      PageView.builder(
+                        controller: _pageController,
+                        itemCount: products.length,
+                        itemBuilder: (context, index) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 15),
+                            child: LacoCard(
+                              product: products[index],
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        LacoPage(product: products[index]),
+                                  ),
+                                );
+                              },
+                            ),
+                          );
+                        },
+                      ),
 
-                // Preço normal
-                Text(
-                  'R\$ ${product.price.toStringAsFixed(2)}',
-                  style: TextStyle(
-                    color: TemaSite.corPrimaria,
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
+                      // Botões de navegação
+                      _buildArrow(
+                        icon: Icons.arrow_back_ios_new,
+                        alignment: Alignment.centerLeft,
+                        onTap: () => _pageController.previousPage(
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeOut,
+                        ),
+                      ),
+                      _buildArrow(
+                        icon: Icons.arrow_forward_ios,
+                        alignment: Alignment.centerRight,
+                        onTap: () => _pageController.nextPage(
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeIn,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 6),
 
-                // Preço com Pix
+                const SizedBox(height: 20),
+
+                // Indicadores (Dots)
                 Row(
-                  children: [
-                    Icon(Icons.payments, size: 14, color: TemaSite.corDestaque),
-                    const SizedBox(width: 4),
-                    Text(
-                      'R\$ ${(product.price * 0.95).toStringAsFixed(2)} no Pix',
-                      style: TextStyle(
-                        color: TemaSite.corDestaque,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 12),
-
-                // BOTÃO
-                Center(
-                  child: OutlinedButton(
-                    onPressed: () {},
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: TemaSite.corSecundaria),
-                      foregroundColor: TemaSite.corSecundaria,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 26,
-                        vertical: 10,
-                      ),
-                    ),
-                    child: const Text(
-                      'COMPRAR',
-                      style: TextStyle(fontSize: 14),
-                    ),
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(
+                    products.length,
+                    (i) => _buildDot(i, products.length),
                   ),
                 ),
               ],
             ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

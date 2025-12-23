@@ -4,15 +4,15 @@
 // ---------------------------------------------
 
 import 'package:flutter/material.dart';
-import '../secoes/cabecalho/cabecalho_logado.dart';
-import '../secoes/rodape/rodape.dart';
-import 'login_page.dart';
-import '../widgets/background_fundo.dart';
+import '../../secoes/cabecalho/cabecalho_logado.dart';
+import '../../secoes/rodape/rodape.dart';
+import '../cliente/login_page.dart';
+import '../../widgets/background_fundo.dart';
 // Importações Necessárias para o Grid
-import '../models/product.dart';
-import '../repository/product_repository.dart'; // Assumindo que o repositório existe
-import '../cards/laco_card.dart'; // Usamos o card para exibir o produto na grade
-import '../tema/tema_site.dart';
+import '../../models/product.dart';
+import '../../repository/product_repository.dart'; // Assumindo que o repositório existe
+import '../../cards/categorias/lacos_card.dart'; // Usamos o card para exibir o produto na grade
+import '../../tema/tema_site.dart';
 
 class DashboardAdminPage extends StatelessWidget {
   const DashboardAdminPage({super.key});

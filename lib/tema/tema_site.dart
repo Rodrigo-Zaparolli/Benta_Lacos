@@ -4,74 +4,46 @@ import 'package:flutter/material.dart';
 // TEMA GLOBAL DO SITE BENTA LAÇOS
 // =============================================================
 class TemaSite {
-  // -----------------------------------------------------------
-  // PALETA DE CORES PRINCIPAL
-  // -----------------------------------------------------------
+  static const String backgroundApp = 'assets/imagens/tela_fundo/dashboard.png';
+
   static const Color corPrimaria = Color(0xFFE91E63); // Rosa Pink
   static const Color corSecundaria = Color(0xFF795548); // Marrom
-  static const Color corDestaque = Color(0xFF4CAF50); // Verde destaque
+  static const Color corDestaque = Color(0xFF4CAF50); // Verde
 
-  // 🔥 NOVO: Cores para o Rodapé Claro (Bege)
-  static const Color corFundoRodape = Color(0xFFF8F4EA); // Bege Claro
-  static const Color corTextoRodape = Color(
-    0xFF5D4037,
-  ); // Marrom Escuro para Contraste
-  static const Color corRastreamento = Color(
-    0xFFE8BFC1,
-  ); // Rosa pálido para o campo de busca
+  static const Color corFundoRodape = Color(0xFFF8F4EA); // Bege
+  static const Color corTextoRodape = Color(0xFF5D4037); // Marrom Escuro
+  static const Color corRastreamento = Color(0xFFE8BFC1); // Rosa pálido
 
-  // -----------------------------------------------------------
-  // FONTES
-  // -----------------------------------------------------------
   static const String fontePrincipal = 'Montserrat';
 
-  // -----------------------------------------------------------
-  // CONFIGURAÇÕES DE SEÇÕES
-  // -----------------------------------------------------------
   static final ConfigRodape rodape = ConfigRodape();
   static final ConfigProduto produto = ConfigProduto();
+  static final ConfigAdmin admin = ConfigAdmin();
 
-  // -----------------------------------------------------------
-  // THEME DATA GLOBAL
-  // -----------------------------------------------------------
   static final ThemeData temaClaro = ThemeData(
     primaryColor: corPrimaria,
-
     colorScheme: const ColorScheme.light(
       primary: corPrimaria,
       secondary: corSecundaria,
       error: Colors.red,
     ),
-
     scaffoldBackgroundColor: Colors.white,
     fontFamily: fontePrincipal,
-
-    // Botões padrão
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: corPrimaria,
         foregroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        elevation: 2,
       ),
     ),
-
-    // Campos de Texto
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: Colors.white,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: Colors.grey.shade400),
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
       focusedBorder: const OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(8)),
         borderSide: BorderSide(color: corPrimaria, width: 2),
       ),
     ),
-
-    // AppBar
     appBarTheme: const AppBarTheme(
       backgroundColor: corPrimaria,
       elevation: 4,
@@ -83,77 +55,78 @@ class TemaSite {
       iconTheme: IconThemeData(color: Colors.white),
     ),
   );
-
-  static ThemeData? tema; // Tema alternativo (caso use dark mode futuramente)
 }
 
 // =============================================================
-// CONFIGURAÇÃO DO RODAPÉ
+// 🔥 CONFIGURAÇÃO DO PAINEL ADMINISTRATIVO (DASHBOARD)
 // =============================================================
+class ConfigAdmin {
+  final double fonteTituloAppBar = 22.0;
+  final double fonteSecao = 20.0;
+  final double fonteCardTitulo = 12.0;
+  final double fonteCardValor = 16.0;
 
-class ConfigRodape {
-  // Fundo
-  // 🔥 Ajustado para o Bege Claro
-  Color? fundoCor = TemaSite.corFundoRodape;
-  String? backgroundImage;
+  final String pathBackground = TemaSite.backgroundApp;
 
-  // Texto
-  // 🔥 Ajustado para Marrom Escuro
-  Color textoCor = TemaSite.corTextoRodape;
-  // 🔥 Link base usa cor de texto padrão
-  Color linkCor = TemaSite.corTextoRodape.withOpacity(0.8);
-  // 🔥 Hover usa a cor primária para destaque
-  Color linkHover = TemaSite.corPrimaria;
+  // AspectRatio para layout horizontal (Ícone ao lado do texto)
+  final double cardAspectRatio = 2.2;
+  final Color corCardFundo = Colors.white;
 
-  // Ícones
-  Color whatsappCor = TemaSite.corTextoRodape; // Marrom escuro para ícones
-  Color instagramCor = TemaSite.corPrimaria; // Rosa Pink para redes sociais
-  Color headerCor = TemaSite.corSecundaria; // Marrom para títulos
-  Color campoRastreioCor =
-      TemaSite.corRastreamento; // Rosa para campo de rastreio
-
-  // Fonte
-  final String fonte = TemaSite.fontePrincipal;
-
-  // Tipografia
-  TextStyle headerStyle({double fontSize = 20, Color? color}) => TextStyle(
-    fontSize: fontSize,
+  TextStyle styleTituloSecao() => TextStyle(
+    fontSize: fonteSecao,
     fontWeight: FontWeight.bold,
-    color: color ?? headerCor, // Usando headerCor
-    fontFamily: fonte,
+    color: const Color(0xFF424242),
+    fontFamily: TemaSite.fontePrincipal,
   );
 
+  TextStyle styleCardValor() => TextStyle(
+    fontSize: fonteCardValor,
+    fontWeight: FontWeight.bold,
+    color: Colors.black,
+    fontFamily: TemaSite.fontePrincipal,
+  );
+}
+
+// =============================================================
+// CONFIGURAÇÃO DO RODAPÉ (Restaurado para corrigir erros)
+// =============================================================
+class ConfigRodape {
+  Color? fundoCor = TemaSite.corFundoRodape;
+  String? backgroundImage = ''; // Adicionado campo que faltava
+  Color textoCor = TemaSite.corTextoRodape;
+  Color linkCor = TemaSite.corTextoRodape.withOpacity(0.8);
+  Color linkHover = TemaSite.corPrimaria;
+  Color whatsappCor = const Color(0xFF25D366); // Cor padrão WhatsApp
+  Color instagramCor = TemaSite.corPrimaria;
+  Color headerCor = TemaSite.corSecundaria;
+  Color campoRastreioCor = TemaSite.corRastreamento;
+
+  final String fonte = TemaSite.fontePrincipal;
+
+  // Método que faltava no seu console
   TextStyle bodyStyle({Color? color, double fontSize = 14}) => TextStyle(
     fontSize: fontSize,
     color: color ?? textoCor,
     fontFamily: fonte,
   );
+
+  TextStyle headerStyle({double fontSize = 20, Color? color}) => TextStyle(
+    fontSize: fontSize,
+    fontWeight: FontWeight.bold,
+    color: color ?? headerCor,
+    fontFamily: fonte,
+  );
 }
 
 // =============================================================
-// CONFIGURAÇÃO PARA PÁGINAS DE PRODUTO (ex: laco_page.dart)
+// CONFIGURAÇÃO PARA PÁGINAS DE PRODUTO (Restaurado)
 // =============================================================
 class ConfigProduto {
-  // Títulos
   Color tituloCor = TemaSite.corSecundaria;
   Color precoCor = TemaSite.corPrimaria;
-
-  // Botão: adicionar ao carrinho
   Color carrinhoBotaoFundo = TemaSite.corPrimaria;
   Color carrinhoBotaoTexto = Colors.white;
-
-  // Botão: consultar frete
-  Color freteBotaoFundo = TemaSite.corSecundaria;
-  Color freteBotaoTexto = Colors.white;
-
-  // Resultado do frete
-  Color freteResultadoCor = TemaSite.corSecundaria;
-
-  // Abas (detalhes / descrição)
-  Color abasIndicadorCor = Colors.blue;
-  Color abasAtivaCor = TemaSite.corSecundaria.withOpacity(0.8);
+  Color abasAtivaCor = TemaSite.corPrimaria; // Usado em laco.dart
   Color abasInativaCor = Colors.grey.shade600;
-
-  // Thumbnails (borda das imagens pequenas)
   Color thumbnailBordaCor = TemaSite.corPrimaria;
 }

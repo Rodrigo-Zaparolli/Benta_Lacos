@@ -1,6 +1,7 @@
-import 'package:benta_lacos/cards/laco_card.dart';
-import 'package:benta_lacos/repository/product_repository.dart';
 import 'package:flutter/material.dart';
+import 'package:benta_lacos/cards/categorias/lacos_card.dart';
+import 'package:benta_lacos/produtos/laco.dart';
+import 'package:benta_lacos/repository/product_repository.dart';
 
 class ProdutosEmDestaque extends StatelessWidget {
   const ProdutosEmDestaque({super.key});
@@ -17,13 +18,11 @@ class ProdutosEmDestaque extends StatelessWidget {
           ),
           const SizedBox(height: 40),
 
-          // Usa ListenableBuilder para obter e atualizar a lista de produtos
           ListenableBuilder(
             listenable: ProductRepository.instance,
             builder: (context, child) {
               final products = ProductRepository.instance.products;
-
-              // Seleciona os primeiros 3 produtos para o destaque
+              // Pega os 3 primeiros produtos como destaque
               final featuredProducts = products.take(3).toList();
 
               if (featuredProducts.isEmpty) {
@@ -39,9 +38,19 @@ class ProdutosEmDestaque extends StatelessWidget {
               return Wrap(
                 spacing: 40,
                 runSpacing: 40,
+                alignment: WrapAlignment.center,
                 children: featuredProducts.map((product) {
-                  // Mapeia cada produto para um LacoCard dinâmico
-                  return LacoCard(product: product);
+                  return LacoCard(
+                    product: product,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => LacoPage(product: product),
+                        ),
+                      );
+                    },
+                  );
                 }).toList(),
               );
             },
@@ -51,6 +60,3 @@ class ProdutosEmDestaque extends StatelessWidget {
     );
   }
 }
-
-// Nota: Os imports de TiaraCard e TicTacCard foram removidos pois
-// a lógica agora usa o LacoCard dinâmico para todos os produtos em destaque.

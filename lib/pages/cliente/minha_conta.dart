@@ -5,8 +5,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../secoes/cabecalho/cabecalho.dart';
-import '../secoes/rodape/rodape.dart';
+import '../../secoes/cabecalho/cabecalho.dart';
+import '../../secoes/rodape/rodape.dart';
 import 'login_page.dart';
 
 class MinhaContaPage extends StatefulWidget {

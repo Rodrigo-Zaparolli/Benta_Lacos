@@ -1,8 +1,7 @@
-import 'package:benta_lacos/pages/login_page.dart';
+import 'package:benta_lacos/pages/cliente/login_page.dart';
 import 'package:flutter/material.dart';
 import 'package:benta_lacos/tema/tema_site.dart';
-import 'package:benta_lacos/pages/home_page.dart';
-import 'package:benta_lacos/pages/home_page.dart';
+import 'package:benta_lacos/pages/cliente/home_page.dart';
 
 // Importações do Firebase
 import 'package:firebase_core/firebase_core.dart';

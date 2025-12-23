@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 // Importações das seções
-import '../secoes/cabecalho/cabecalho.dart';
-import '../secoes/carrossel/carrossel_principal.dart';
+import '../../secoes/cabecalho/cabecalho.dart';
+import '../../secoes/carrossel/carrossel_principal.dart';
 //import '../secoes/beneficios_categorias/beneficios_e_categorias.dart';
-import '../secoes/produtos_destaque/produtos_em_destaque.dart';
-import '../secoes/carrossel/carrossel_depoimentos.dart';
-import '../secoes/rodape/rodape.dart';
-import '../widgets/background_fundo.dart';
+import '../../secoes/produtos_destaque/produtos_em_destaque.dart';
+import '../../secoes/carrossel/carrossel_depoimentos.dart';
+import '../../secoes/rodape/rodape.dart';
+import '../../widgets/background_fundo.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});

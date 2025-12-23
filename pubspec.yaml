@@ -4,41 +4,43 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.8.1 <4.0.0' # Corrigido o formato do SDK
+  sdk: '>=3.8.1 <4.0.0'
 
 dependencies:
   flutter:
-    sdk: flutter # Esta é a única linha que fica aninhada sob 'flutter:'
-    # Pacotes principais, corretamente alinhados sob 'dependencies:'
-  firebase_auth_web: ^5.8.14
-  mask_text_input_formatter: ^2.3.0
-  flutter_card_swiper: ^4.0.0
-  file_picker: ^6.0.0
-
-  # Firebase
+    sdk: flutter
+  
+  # Autenticação e Firebase
   firebase_core: ^2.22.0
   firebase_auth: ^4.8.0
+  firebase_auth_web: ^5.8.14
   cloud_firestore: ^4.7.0
 
-  # Rede e máscaras
-  http: ^0.13.6
-  brasil_fields: ^1.6.0
-  validatorless: ^1.0.0
+  # Gerenciamento de Estado e Navegação
+  provider: ^6.1.1
+  url_launcher: ^6.3.0
 
-  # Ícones e utilidades
+  # UI e Animações
   cupertino_icons: ^1.0.8
   font_awesome_flutter: ^10.9.1
-  url_launcher: ^6.3.0
+  flutter_card_swiper: ^4.0.0
+  confetti: ^0.7.0
+  
+  # Formulários e Utilidades
+  mask_text_input_formatter: ^2.3.0
+  file_picker: ^6.0.0
+  http: ^1.1.0
+  brasil_fields: ^1.6.0
+  validatorless: ^1.0.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^6.0.0
+  flutter_lints: ^3.0.0
+  qr_flutter: ^4.1.0
 
 flutter:
   uses-material-design: true
-
-  # Entradas de assets duplicadas foram removidas.
   assets:
     - assets/imagens/carousel/
     - assets/imagens/logo.png
@@ -49,3 +51,8 @@ flutter:
     - assets/imagens/social/
     - assets/imagens/banner_principal.png
     - assets/imagens/tela_fundo/
+    - assets/imagens/icones_personalizados/laco.png
+    - assets/imagens/icones_personalizados/tiara.png
+    - assets/imagens/icones_personalizados/presilha.png
+    - assets/imagens/icones_personalizados/kit.png
+    - assets/imagens/icones_personalizados/faixa.png

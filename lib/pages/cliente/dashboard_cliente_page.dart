@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../secoes/cabecalho/cabecalho.dart';
-import '../secoes/rodape/rodape.dart';
-import '../widgets/background_fundo.dart';
+import '../../secoes/cabecalho/cabecalho.dart';
+import '../../secoes/rodape/rodape.dart';
+import '../../widgets/background_fundo.dart';
 import 'login_page.dart'; // Página de login
 
 class DashboardClientePage extends StatefulWidget {
@@ -59,9 +59,9 @@ class _DashboardClientePageState extends State<DashboardClientePage> {
           children: [
             // Cabecalho agora recebe a função de logout
             const Cabecalho(
-                // Passa a função de logout para o CabecalhoLogado internamente
-                // O Cabecalho vai decidir se mostra logado ou deslogado
-                ),
+              // Passa a função de logout para o CabecalhoLogado internamente
+              // O Cabecalho vai decidir se mostra logado ou deslogado
+            ),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(20),

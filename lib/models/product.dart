@@ -12,6 +12,7 @@ class Product {
   final String description;
   final String color;
   final String composition;
+  final String? category;
 
   Product({
     required this.id,
@@ -25,6 +26,7 @@ class Product {
     required this.description,
     required this.color,
     required this.composition,
+    this.category,
   });
 
   Product copyWith({
@@ -39,6 +41,7 @@ class Product {
     String? description,
     String? color,
     String? composition,
+    String? category,
   }) {
     return Product(
       id: id ?? this.id,
@@ -52,6 +55,7 @@ class Product {
       description: description ?? this.description,
       color: color ?? this.color,
       composition: composition ?? this.composition,
+      category: category ?? this.category,
     );
   }
 }

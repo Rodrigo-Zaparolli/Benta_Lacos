@@ -3,7 +3,7 @@
 // Exibe o e-mail do usuário e permite acessar "Minha Conta" ou realizar logout.
 
 import 'package:flutter/material.dart';
-import '../../pages/minha_conta.dart';
+import '../../pages/cliente/minha_conta.dart';
 
 class CabecalhoLogado extends StatefulWidget {
   final String email;

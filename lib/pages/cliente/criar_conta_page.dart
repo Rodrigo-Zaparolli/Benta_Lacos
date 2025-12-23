@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:validatorless/validatorless.dart';
-import '../widgets/background_fundo.dart';
-import '../secoes/cabecalho/cabecalho.dart';
-import '../secoes/rodape/rodape.dart'; // Importando o Rodape
+import '../../widgets/background_fundo.dart';
+import '../../secoes/cabecalho/cabecalho.dart';
+import '../../secoes/rodape/rodape.dart'; // Importando o Rodape
 import 'login_page.dart';
 
 class CriarContaPage extends StatefulWidget {

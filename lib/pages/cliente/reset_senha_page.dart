@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:validatorless/validatorless.dart';
 
-import '../secoes/cabecalho/cabecalho.dart';
-import '../secoes/rodape/rodape.dart'; // Mantido comentado, mas não usado.
-import '../widgets/background_fundo.dart';
+import '../../secoes/cabecalho/cabecalho.dart';
+import '../../secoes/rodape/rodape.dart'; // Mantido comentado, mas não usado.
+import '../../widgets/background_fundo.dart';
 
 class ResetSenhaPage extends StatefulWidget {
   const ResetSenhaPage({super.key});
