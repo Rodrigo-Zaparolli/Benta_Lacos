@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:validatorless/validatorless.dart';
+
 import '../../secoes/cabecalho/cabecalho.dart';
 import '../../widgets/background_fundo.dart';
-
-// Páginas chamadas por navegação direta
+import '../../tema/tema_site.dart';
 import 'criar_conta_page.dart';
 import 'reset_senha_page.dart';
 
@@ -19,9 +20,18 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _email = TextEditingController();
   final _senha = TextEditingController();
+
   bool _loading = false;
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  @override
+  void dispose() {
+    _email.dispose();
+    _senha.dispose();
+    super.dispose();
+  }
 
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
@@ -29,35 +39,41 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => _loading = true);
 
     try {
-      final cred = await _auth.signInWithEmailAndPassword(
+      final userCredential = await _auth.signInWithEmailAndPassword(
         email: _email.text.trim(),
         password: _senha.text,
       );
 
-      // Usuário existe, mas e-mail não verificado
-      if (!cred.user!.emailVerified) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Verifique seu e-mail antes de entrar.'),
-          ),
-        );
-        await _auth.signOut();
-        return;
-      }
+      if (!mounted) return;
+
+      final doc = await _firestore
+          .collection('usuarios')
+          .doc(userCredential.user!.uid)
+          .get();
 
       if (!mounted) return;
 
-      // OBS: NÃO navegamos manualmente para dashboard.
-      // O RootDecider detecta login e redireciona.
-      Navigator.pushReplacementNamed(context, '/');
+      final tipo = doc.data()?['tipo'] ?? 'cliente';
+
+      if (tipo == 'admin') {
+        Navigator.pushNamedAndRemoveUntil(context, '/admin', (route) => false);
+      } else {
+        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+      }
     } on FirebaseAuthException catch (e) {
       String msg = 'Erro ao fazer login';
 
-      if (e.code == 'user-not-found') msg = 'Usuário não encontrado';
-      if (e.code == 'wrong-password') msg = 'Senha incorreta';
-      if (e.code == 'invalid-email') msg = 'E-mail inválido';
+      if (e.code == 'user-not-found' || e.code == 'invalid-credential') {
+        msg = 'Usuário ou senha incorretos';
+      }
 
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg), backgroundColor: Colors.redAccent),
+      );
+    } catch (_) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ocorreu um erro inesperado')),
+      );
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -87,15 +103,18 @@ class _LoginPageState extends State<LoginPage> {
                         child: Form(
                           key: _formKey,
                           child: Column(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Text(
+                              Text(
                                 'Login',
                                 style: TextStyle(
                                   fontSize: 25,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.brown,
+                                  color: TemaSite.corSecundaria,
+                                  fontFamily: TemaSite.fontePrincipal,
                                 ),
                               ),
+
                               const SizedBox(height: 20),
 
                               TextFormField(
@@ -103,14 +122,14 @@ class _LoginPageState extends State<LoginPage> {
                                 decoration: const InputDecoration(
                                   labelText: 'E-mail',
                                   border: OutlineInputBorder(),
-                                  filled: true,
-                                  fillColor: Color(0xFFF8F5F2),
+                                  prefixIcon: Icon(Icons.email_outlined),
                                 ),
                                 validator: Validatorless.multiple([
-                                  Validatorless.required('E-mail obrigatório'),
+                                  Validatorless.required('Obrigatório'),
                                   Validatorless.email('E-mail inválido'),
                                 ]),
                               ),
+
                               const SizedBox(height: 12),
 
                               TextFormField(
@@ -119,37 +138,44 @@ class _LoginPageState extends State<LoginPage> {
                                 decoration: const InputDecoration(
                                   labelText: 'Senha',
                                   border: OutlineInputBorder(),
-                                  filled: true,
-                                  fillColor: Color(0xFFF8F5F2),
+                                  prefixIcon: Icon(Icons.lock_outline),
                                 ),
                                 validator: Validatorless.required(
-                                  'Senha obrigatória',
+                                  'Obrigatório',
                                 ),
+                                onFieldSubmitted: (_) => _login(),
                               ),
+
                               const SizedBox(height: 20),
 
                               _loading
-                                  ? const CircularProgressIndicator()
+                                  ? const CircularProgressIndicator(
+                                      color: TemaSite.corPrimaria,
+                                    )
                                   : SizedBox(
                                       width: double.infinity,
+                                      height: 50,
                                       child: ElevatedButton(
                                         onPressed: _login,
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.brown,
-                                          padding: const EdgeInsets.symmetric(
-                                            vertical: 14,
+                                          backgroundColor: TemaSite.corPrimaria,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
                                           ),
                                         ),
                                         child: const Text(
-                                          'Entrar',
+                                          'ENTRAR',
                                           style: TextStyle(
                                             color: Colors.white,
-                                            fontSize: 17,
                                             fontWeight: FontWeight.bold,
+                                            fontSize: 16,
                                           ),
                                         ),
                                       ),
                                     ),
+
                               const SizedBox(height: 12),
 
                               Row(

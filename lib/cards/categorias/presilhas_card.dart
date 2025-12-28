@@ -1,14 +1,14 @@
+import 'package:benta_lacos/produtos/presilhas.dart';
 import 'package:flutter/material.dart';
-import '../../produtos/tiaras.dart'; // Página da Tiara
 
-class TiaraCard extends StatefulWidget {
-  const TiaraCard({super.key});
+class TicTacCard extends StatefulWidget {
+  const TicTacCard({super.key});
 
   @override
-  State<TiaraCard> createState() => _TiaraCardState();
+  State<TicTacCard> createState() => _TicTacCarddState();
 }
 
-class _TiaraCardState extends State<TiaraCard> {
+class _TicTacCarddState extends State<TicTacCard> {
   bool hover = false;
 
   @override
@@ -20,7 +20,7 @@ class _TiaraCardState extends State<TiaraCard> {
         onTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const TiaraPage()),
+            MaterialPageRoute(builder: (context) => const TicTacPage()),
           );
         },
         child: AnimatedContainer(
@@ -47,7 +47,7 @@ class _TiaraCardState extends State<TiaraCard> {
                     top: Radius.circular(12),
                   ),
                   child: Image.asset(
-                    'assets/imagens/produtos/tiaras/tiaras.png',
+                    'assets/imagens/produtos/tictac/tictac.png',
                     fit: BoxFit.cover,
                     width: double.infinity,
                   ),
@@ -55,7 +55,7 @@ class _TiaraCardState extends State<TiaraCard> {
               ),
               const SizedBox(height: 10),
               const Text(
-                'Tiara Premium',
+                'tictac Premium',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 5),

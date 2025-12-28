@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:benta_lacos/cards/categorias/lacos_card.dart';
-import 'package:benta_lacos/produtos/laco.dart';
+import 'package:benta_lacos/produtos/lacos.dart';
 import 'package:benta_lacos/repository/product_repository.dart';
 
 class ProdutosEmDestaque extends StatelessWidget {
@@ -17,22 +17,16 @@ class ProdutosEmDestaque extends StatelessWidget {
             style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 40),
-
           ListenableBuilder(
             listenable: ProductRepository.instance,
             builder: (context, child) {
-              final products = ProductRepository.instance.products;
-              // Pega os 3 primeiros produtos como destaque
-              final featuredProducts = products.take(3).toList();
+              // 🔥 Filtra apenas os marcados pelo Admin
+              final featuredProducts = ProductRepository.instance.products
+                  .where((p) => p.isFeatured)
+                  .toList();
 
               if (featuredProducts.isEmpty) {
-                return const Padding(
-                  padding: EdgeInsets.only(top: 20),
-                  child: Text(
-                    'Nenhum produto em destaque no momento.',
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
-                  ),
-                );
+                return const Text('Nenhum destaque no momento 🎀');
               }
 
               return Wrap(
@@ -42,14 +36,12 @@ class ProdutosEmDestaque extends StatelessWidget {
                 children: featuredProducts.map((product) {
                   return LacoCard(
                     product: product,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => LacoPage(product: product),
-                        ),
-                      );
-                    },
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => LacoPage(product: product),
+                      ),
+                    ),
                   );
                 }).toList(),
               );

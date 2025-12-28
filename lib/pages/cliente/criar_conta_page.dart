@@ -1,11 +1,14 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:validatorless/validatorless.dart';
+import 'package:brasil_fields/brasil_fields.dart';
 import '../../widgets/background_fundo.dart';
 import '../../secoes/cabecalho/cabecalho.dart';
-import '../../secoes/rodape/rodape.dart'; // Importando o Rodape
+import '../../secoes/rodape/rodape.dart';
 import 'login_page.dart';
 
 class CriarContaPage extends StatefulWidget {
@@ -28,9 +31,16 @@ class _CriarContaPageState extends State<CriarContaPage> {
   final _cidadeController = TextEditingController();
   final _estadoController = TextEditingController();
 
-  bool _loading = false;
+  // Novos Controllers solicitados
+  final _numeroController = TextEditingController();
+  final _bairroController = TextEditingController();
+  final _complementoController = TextEditingController();
+  final _telefoneController = TextEditingController();
+  final _nascimentoController = TextEditingController();
 
+  bool _loading = false;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   @override
   void dispose() {
@@ -43,20 +53,17 @@ class _CriarContaPageState extends State<CriarContaPage> {
     _enderecoController.dispose();
     _cidadeController.dispose();
     _estadoController.dispose();
+    _numeroController.dispose();
+    _bairroController.dispose();
+    _complementoController.dispose();
+    _telefoneController.dispose();
+    _nascimentoController.dispose();
     super.dispose();
   }
 
   Future<void> _buscarCEP() async {
-    if (_cepController.text.isEmpty) return;
-
     final cep = _cepController.text.replaceAll(RegExp(r'[^0-9]'), '');
-
-    if (cep.length != 8) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('CEP inválido')));
-      return;
-    }
+    if (cep.length != 8) return;
 
     try {
       final url = Uri.parse("https://viacep.com.br/ws/$cep/json/");
@@ -64,19 +71,18 @@ class _CriarContaPageState extends State<CriarContaPage> {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        if (data.containsKey('erro')) return;
 
         if (!mounted) return;
-
         setState(() {
-          _enderecoController.text = "${data['logradouro']}, ${data['bairro']}";
-          _cidadeController.text = data['localidade'];
-          _estadoController.text = data['uf'];
+          _enderecoController.text = data['logradouro'] ?? '';
+          _bairroController.text = data['bairro'] ?? '';
+          _cidadeController.text = data['localidade'] ?? '';
+          _estadoController.text = data['uf'] ?? '';
         });
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Erro ao buscar CEP')));
+      debugPrint("Erro ao buscar CEP: $e");
     }
   }
 
@@ -91,17 +97,37 @@ class _CriarContaPageState extends State<CriarContaPage> {
         password: _senhaController.text.trim(),
       );
 
-      if (!(userCred.user?.emailVerified ?? false)) {
-        await userCred.user?.sendEmailVerification();
-      }
+      final String uid = userCred.user!.uid;
+
+      await _firestore.collection('usuarios').doc(uid).set({
+        'uid': uid,
+        'nome': _nomeController.text.trim(),
+        'sobrenome': _sobrenomeController.text.trim(),
+        'email': _emailController.text.trim(),
+        'telefone': _telefoneController.text.trim(),
+        'dataNascimento': _nascimentoController.text.trim(),
+        'cep': _cepController.text.trim(),
+        'endereco': _enderecoController.text.trim(),
+        'numero': _numeroController.text.trim(),
+        'bairro': _bairroController.text.trim(),
+        'complemento': _complementoController.text.trim(),
+        'cidade': _cidadeController.text.trim(),
+        'uf': _estadoController.text.trim(),
+        'tipo': 'cliente',
+        'dataCriacao': FieldValue.serverTimestamp(),
+      });
+
+      await userCred.user?.sendEmailVerification();
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Conta criada! Verifique seu e-mail.')),
+        const SnackBar(
+          content: Text('Conta criada com sucesso! Verifique seu e-mail.'),
+          backgroundColor: Colors.green,
+        ),
       );
 
-      // ✔️ Correto → Volta para LoginPage
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const LoginPage()),
@@ -110,11 +136,14 @@ class _CriarContaPageState extends State<CriarContaPage> {
       String errorMsg = 'Erro ao criar conta';
       if (e.code == 'email-already-in-use') errorMsg = 'E-mail já está em uso';
       if (e.code == 'weak-password') errorMsg = 'Senha muito fraca';
-      if (e.code == 'invalid-email') errorMsg = 'E-mail inválido';
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(errorMsg)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errorMsg), backgroundColor: Colors.red),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Erro interno ao salvar dados.')),
+      );
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -126,6 +155,8 @@ class _CriarContaPageState extends State<CriarContaPage> {
       filled: true,
       fillColor: const Color(0xFFF8F5F2),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+      labelStyle: const TextStyle(color: Colors.brown, fontSize: 14),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
     );
   }
 
@@ -133,13 +164,10 @@ class _CriarContaPageState extends State<CriarContaPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SingleChildScrollView(
-        // ROLAGEM APLICADA AQUI
         child: BackgroundFundo(
           child: Column(
             children: [
               const Cabecalho(),
-
-              // CONTEÚDO DO FORMULÁRIO (removido Expanded e Center externo)
               Padding(
                 padding: const EdgeInsets.symmetric(
                   vertical: 40,
@@ -158,20 +186,18 @@ class _CriarContaPageState extends State<CriarContaPage> {
                         child: Form(
                           key: _formKey,
                           child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Center(
-                                child: Text(
-                                  'Criar Conta',
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.brown,
-                                  ),
+                              const Text(
+                                'Criar Conta',
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.brown,
                                 ),
                               ),
                               const SizedBox(height: 20),
 
+                              // Nome e Sobrenome
                               Row(
                                 children: [
                                   Expanded(
@@ -179,7 +205,7 @@ class _CriarContaPageState extends State<CriarContaPage> {
                                       controller: _nomeController,
                                       decoration: _inputDeco('Nome *'),
                                       validator: Validatorless.required(
-                                        'Nome obrigatório',
+                                        'Obrigatório',
                                       ),
                                     ),
                                   ),
@@ -189,74 +215,175 @@ class _CriarContaPageState extends State<CriarContaPage> {
                                       controller: _sobrenomeController,
                                       decoration: _inputDeco('Sobrenome *'),
                                       validator: Validatorless.required(
-                                        'Sobrenome obrigatório',
+                                        'Obrigatório',
                                       ),
                                     ),
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 20),
+                              const SizedBox(height: 15),
+
+                              // Telefone e Nascimento
+                              Row(
+                                children: [
+                                  Expanded(
+                                    flex: 2,
+                                    child: TextFormField(
+                                      controller: _telefoneController,
+                                      decoration: _inputDeco('Telefone *'),
+                                      keyboardType: TextInputType.phone,
+                                      inputFormatters: [
+                                        FilteringTextInputFormatter.digitsOnly,
+                                        TelefoneInputFormatter(),
+                                      ],
+                                      validator: Validatorless.required(
+                                        'Obrigatório',
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    flex: 2,
+                                    child: TextFormField(
+                                      controller: _nascimentoController,
+                                      decoration: _inputDeco('Nascimento *'),
+                                      keyboardType: TextInputType.number,
+                                      inputFormatters: [
+                                        FilteringTextInputFormatter.digitsOnly,
+                                        DataInputFormatter(),
+                                      ],
+                                      validator: Validatorless.multiple([
+                                        Validatorless.required('Obrigatório'),
+                                        Validatorless.min(10, 'Data inválida'),
+                                      ]),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 15),
 
                               TextFormField(
                                 controller: _emailController,
                                 decoration: _inputDeco('E-mail *'),
                                 keyboardType: TextInputType.emailAddress,
                                 validator: Validatorless.multiple([
-                                  Validatorless.required('E-mail obrigatório'),
-                                  Validatorless.email('E-mail inválido'),
+                                  Validatorless.required('Obrigatório'),
+                                  Validatorless.email('Inválido'),
                                 ]),
                               ),
-                              const SizedBox(height: 20),
-
-                              TextFormField(
-                                controller: _senhaController,
-                                decoration: _inputDeco('Senha *'),
-                                obscureText: true,
-                                validator: Validatorless.multiple([
-                                  Validatorless.required('Senha obrigatória'),
-                                  Validatorless.min(
-                                    6,
-                                    'A senha deve ter no mínimo 6 caracteres',
-                                  ),
-                                ]),
-                              ),
-                              const SizedBox(height: 20),
-
-                              TextFormField(
-                                controller: _confirmarSenhaController,
-                                decoration: _inputDeco('Confirmar Senha *'),
-                                obscureText: true,
-                                validator: Validatorless.multiple([
-                                  Validatorless.required(
-                                    'Confirmação obrigatória',
-                                  ),
-                                  Validatorless.compare(
-                                    _senhaController,
-                                    'As senhas não coincidem',
-                                  ),
-                                ]),
-                              ),
-                              const SizedBox(height: 20),
-
-                              TextFormField(
-                                controller: _cepController,
-                                decoration: _inputDeco('CEP'),
-                                keyboardType: TextInputType.number,
-                                onChanged: (value) {
-                                  if (value.length == 8) _buscarCEP();
-                                },
-                              ),
-                              const SizedBox(height: 20),
-
-                              TextFormField(
-                                controller: _enderecoController,
-                                decoration: _inputDeco('Endereço'),
-                              ),
-                              const SizedBox(height: 20),
+                              const SizedBox(height: 15),
 
                               Row(
                                 children: [
                                   Expanded(
+                                    child: TextFormField(
+                                      controller: _senhaController,
+                                      decoration: _inputDeco('Senha *'),
+                                      obscureText: true,
+                                      validator: Validatorless.multiple([
+                                        Validatorless.required('Obrigatório'),
+                                        Validatorless.min(
+                                          6,
+                                          'Mínimo 6 caracteres',
+                                        ),
+                                      ]),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: TextFormField(
+                                      controller: _confirmarSenhaController,
+                                      decoration: _inputDeco('Confirmar *'),
+                                      obscureText: true,
+                                      validator: Validatorless.multiple([
+                                        Validatorless.required('Obrigatório'),
+                                        Validatorless.compare(
+                                          _senhaController,
+                                          'Diferente',
+                                        ),
+                                      ]),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 25),
+                              const Divider(),
+                              const SizedBox(height: 10),
+                              const Text(
+                                "Endereço",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.brown,
+                                ),
+                              ),
+                              const SizedBox(height: 15),
+
+                              // CEP e Bairro
+                              Row(
+                                children: [
+                                  Expanded(
+                                    flex: 2,
+                                    child: TextFormField(
+                                      controller: _cepController,
+                                      decoration: _inputDeco('CEP'),
+                                      keyboardType: TextInputType.number,
+                                      inputFormatters: [
+                                        FilteringTextInputFormatter.digitsOnly,
+                                        CepInputFormatter(),
+                                      ],
+                                      onChanged: (value) {
+                                        if (value.length == 10) _buscarCEP();
+                                      },
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    flex: 3,
+                                    child: TextFormField(
+                                      controller: _bairroController,
+                                      decoration: _inputDeco('Bairro'),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 15),
+
+                              // Endereço (Logradouro) e Número
+                              Row(
+                                children: [
+                                  Expanded(
+                                    flex: 4,
+                                    child: TextFormField(
+                                      controller: _enderecoController,
+                                      decoration: _inputDeco('Rua/Avenida'),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    flex: 2,
+                                    child: TextFormField(
+                                      controller: _numeroController,
+                                      decoration: _inputDeco('Nº'),
+                                      keyboardType: TextInputType.text,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 15),
+
+                              TextFormField(
+                                controller: _complementoController,
+                                decoration: _inputDeco(
+                                  'Complemento (Apto, Bloco, etc.)',
+                                ),
+                              ),
+                              const SizedBox(height: 15),
+
+                              // Cidade e UF
+                              Row(
+                                children: [
+                                  Expanded(
+                                    flex: 4,
                                     child: TextFormField(
                                       controller: _cidadeController,
                                       decoration: _inputDeco('Cidade'),
@@ -268,56 +395,49 @@ class _CriarContaPageState extends State<CriarContaPage> {
                                     child: TextFormField(
                                       controller: _estadoController,
                                       decoration: _inputDeco('UF'),
+                                      inputFormatters: [
+                                        LengthLimitingTextInputFormatter(2),
+                                      ],
                                     ),
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 25),
+                              const SizedBox(height: 30),
 
-                              Center(
-                                child: _loading
-                                    ? const CircularProgressIndicator()
-                                    : SizedBox(
-                                        width: double.infinity,
-                                        child: ElevatedButton(
-                                          onPressed: _criarConta,
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.brown,
-                                            padding: const EdgeInsets.symmetric(
-                                              vertical: 14,
-                                            ),
+                              _loading
+                                  ? const CircularProgressIndicator(
+                                      color: Colors.brown,
+                                    )
+                                  : SizedBox(
+                                      width: double.infinity,
+                                      child: ElevatedButton(
+                                        onPressed: _criarConta,
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.brown,
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 16,
                                           ),
-                                          child: const Text(
-                                            'Criar Conta',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 18,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              10,
                                             ),
                                           ),
                                         ),
+                                        child: const Text(
+                                          'CRIAR CONTA',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
                                       ),
-                              ),
-
-                              const SizedBox(height: 10),
-
-                              // Botão para voltar para a tela de Login
-                              Center(
-                                child: TextButton(
-                                  onPressed: () {
-                                    Navigator.pushReplacement(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => const LoginPage(),
-                                      ),
-                                    );
-                                  },
-                                  child: const Text(
-                                    'Voltar',
-                                    style: TextStyle(
-                                      color: Colors.brown,
-                                      fontSize: 16,
                                     ),
-                                  ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text(
+                                  'Voltar para Login',
+                                  style: TextStyle(color: Colors.brown),
                                 ),
                               ),
                             ],
@@ -328,7 +448,6 @@ class _CriarContaPageState extends State<CriarContaPage> {
                   ),
                 ),
               ),
-
               const Rodape(),
             ],
           ),

@@ -1,15 +1,13 @@
-// lib/secoes/cabecalho/cabecalho.dart
-
+import 'package:benta_lacos/pages/admin/admin_page.dart';
 import 'package:benta_lacos/pages/cart/cart_screen.dart';
+import 'package:benta_lacos/pages/cliente/categoria_page.dart'; // Importe a nova página
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
-
 import 'package:benta_lacos/models/providers/cart_provider.dart';
 import '../../pages/cliente/home_page.dart';
-
-// CERTIFIQUE-SE QUE O CAMINHO ABAIXO ESTÁ CORRETO
-
+import '../../tema/tema_site.dart';
 import 'cabecalho_logado.dart';
 import 'cabecalho_deslogado.dart';
 
@@ -41,7 +39,6 @@ class _CabecalhoState extends State<Cabecalho> {
                   : MediaQuery.of(context).size.width * 0.85,
               height: double.infinity,
               color: Colors.white,
-              // CHAMADA CORRIGIDA PARA CartScreen()
               child: const CartScreen(),
             ),
           ),
@@ -73,7 +70,6 @@ class _CabecalhoState extends State<Cabecalho> {
                 'assets/imagens/tela_fundo/background_cabecalho.png',
               ),
               fit: BoxFit.cover,
-              repeat: ImageRepeat.repeat,
               opacity: 0.95,
             ),
           ),
@@ -84,7 +80,6 @@ class _CabecalhoState extends State<Cabecalho> {
               const SizedBox(width: 40),
               const Expanded(flex: 3, child: _LogoLink()),
               const SizedBox(width: 40),
-
               Expanded(
                 flex: 4,
                 child: Row(
@@ -93,14 +88,20 @@ class _CabecalhoState extends State<Cabecalho> {
                     user == null
                         ? const CabecalhoDeslogado()
                         : CabecalhoLogado(
-                            email: user.email ?? 'Minha conta',
                             onLogout: () async {
                               await _auth.signOut();
-                              setState(() {});
+                              if (mounted) {
+                                setState(() {});
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const HomePage(),
+                                  ),
+                                );
+                              }
                             },
                           ),
                     const SizedBox(width: 20),
-
                     Consumer<CartProvider>(
                       builder: (_, cart, __) {
                         return CarrinhoIcon(
@@ -137,12 +138,12 @@ class _CabecalhoState extends State<Cabecalho> {
             ),
           ],
         ),
-        child: const Row(
-          children: [
-            Icon(Icons.search, color: Colors.brown),
-            SizedBox(width: 10),
-            Text('Pesquisar...', style: TextStyle(color: Colors.black54)),
-          ],
+        child: const TextField(
+          decoration: InputDecoration(
+            hintText: 'Pesquisar laços...',
+            border: InputBorder.none,
+            icon: Icon(Icons.search, color: TemaSite.corPrimaria),
+          ),
         ),
       ),
     );
@@ -150,7 +151,7 @@ class _CabecalhoState extends State<Cabecalho> {
 
   Widget _buildBottomMenu() {
     return Container(
-      height: 35,
+      height: 45,
       padding: const EdgeInsets.symmetric(horizontal: 20),
       decoration: const BoxDecoration(
         color: Color(0xFFFFF3E5),
@@ -158,28 +159,36 @@ class _CabecalhoState extends State<Cabecalho> {
           BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 3)),
         ],
       ),
-      child: const Row(
+      child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _MenuItem('Laços'),
-          _MenuItem('Tiaras'),
-          _MenuItem('Faixinhas'),
-          _MenuItem('Tic-Tac'),
+        children: const [
+          _MenuItem(title: 'Laços'),
+          _MenuItem(title: 'Tiaras'),
+          _MenuItem(title: 'Presilhas'),
+          _MenuItem(title: 'Kits'),
+          _MenuItem(title: 'Faixas'),
         ],
       ),
     );
   }
 }
 
-// Componentes auxiliares (MenuItem, LogoLink, CarrinhoIcon) permanecem iguais...
 class _MenuItem extends StatelessWidget {
   final String title;
-  const _MenuItem(this.title);
+  const _MenuItem({required this.title});
 
   @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
+  Widget build(BuildContext context) => MouseRegion(
+    cursor: SystemMouseCursors.click,
+    child: GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => CategoriaPage(categoriaNome: title),
+          ),
+        );
+      },
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10),
         child: Text(
@@ -191,90 +200,81 @@ class _MenuItem extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
 }
 
+// Os widgets _LogoLink e CarrinhoIcon permanecem iguais aos que você enviou...
 class _LogoLink extends StatefulWidget {
   const _LogoLink();
-
   @override
   State<_LogoLink> createState() => _LogoLinkState();
 }
 
 class _LogoLinkState extends State<_LogoLink> {
   bool _hover = false;
-
   @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _hover = true),
-      onExit: (_) => setState(() => _hover = false),
-      child: GestureDetector(
-        onTap: () {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const HomePage()),
-          );
-        },
-        child: AnimatedOpacity(
-          duration: const Duration(milliseconds: 180),
-          opacity: _hover ? 0.75 : 1,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Image.asset('assets/imagens/logo.png', height: 60),
-              const Text(
-                'Roupas e Enxoval para Bebê',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: Colors.brown,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
+  Widget build(BuildContext context) => MouseRegion(
+    cursor: SystemMouseCursors.click,
+    onEnter: (_) => setState(() => _hover = true),
+    onExit: (_) => setState(() => _hover = false),
+    child: GestureDetector(
+      onTap: () => Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const HomePage()),
       ),
-    );
-  }
-}
-
-class CarrinhoIcon extends StatelessWidget {
-  final int quantidade;
-  final VoidCallback? onTap;
-
-  const CarrinhoIcon({super.key, this.quantidade = 0, this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: onTap,
-        child: Row(
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 180),
+        opacity: _hover ? 0.75 : 1,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.shopping_cart_outlined, color: Colors.brown),
-            const SizedBox(width: 6),
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: const BoxDecoration(
+            Image.asset('assets/imagens/logo.png', height: 60),
+            const Text(
+              'Roupas e Enxoval para Bebê',
+              style: TextStyle(
+                fontSize: 10,
                 color: Colors.brown,
-                shape: BoxShape.circle,
-              ),
-              child: Text(
-                quantidade.toString(),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
+                fontWeight: FontWeight.w600,
               ),
             ),
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
+
+class CarrinhoIcon extends StatelessWidget {
+  final int quantidade;
+  final VoidCallback? onTap;
+  const CarrinhoIcon({super.key, this.quantidade = 0, this.onTap});
+  @override
+  Widget build(BuildContext context) => MouseRegion(
+    cursor: SystemMouseCursors.click,
+    child: GestureDetector(
+      onTap: onTap,
+      child: Row(
+        children: [
+          const Icon(Icons.shopping_cart_outlined, color: Colors.brown),
+          const SizedBox(width: 6),
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: const BoxDecoration(
+              color: Colors.brown,
+              shape: BoxShape.circle,
+            ),
+            child: Text(
+              quantidade.toString(),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }

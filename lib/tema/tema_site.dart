@@ -20,7 +20,11 @@ class TemaSite {
   static final ConfigProduto produto = ConfigProduto();
   static final ConfigAdmin admin = ConfigAdmin();
 
+  // SOLUÇÃO DO ERRO: Criamos um getter chamado 'tema' que o main.dart procura
+  static ThemeData get tema => temaClaro;
+
   static final ThemeData temaClaro = ThemeData(
+    useMaterial3: true,
     primaryColor: corPrimaria,
     colorScheme: const ColorScheme.light(
       primary: corPrimaria,
@@ -47,6 +51,7 @@ class TemaSite {
     appBarTheme: const AppBarTheme(
       backgroundColor: corPrimaria,
       elevation: 4,
+      centerTitle: true,
       titleTextStyle: TextStyle(
         color: Colors.white,
         fontSize: 18,
@@ -68,8 +73,7 @@ class ConfigAdmin {
 
   final String pathBackground = TemaSite.backgroundApp;
 
-  // AspectRatio para layout horizontal (Ícone ao lado do texto)
-  final double cardAspectRatio = 2.2;
+  final double cardAspectRatio = 3;
   final Color corCardFundo = Colors.white;
 
   TextStyle styleTituloSecao() => TextStyle(
@@ -88,22 +92,21 @@ class ConfigAdmin {
 }
 
 // =============================================================
-// CONFIGURAÇÃO DO RODAPÉ (Restaurado para corrigir erros)
+// CONFIGURAÇÃO DO RODAPÉ
 // =============================================================
 class ConfigRodape {
   Color? fundoCor = TemaSite.corFundoRodape;
-  String? backgroundImage = ''; // Adicionado campo que faltava
+  String? backgroundImage = '';
   Color textoCor = TemaSite.corTextoRodape;
   Color linkCor = TemaSite.corTextoRodape.withOpacity(0.8);
   Color linkHover = TemaSite.corPrimaria;
-  Color whatsappCor = const Color(0xFF25D366); // Cor padrão WhatsApp
+  Color whatsappCor = const Color(0xFF25D366);
   Color instagramCor = TemaSite.corPrimaria;
   Color headerCor = TemaSite.corSecundaria;
   Color campoRastreioCor = TemaSite.corRastreamento;
 
   final String fonte = TemaSite.fontePrincipal;
 
-  // Método que faltava no seu console
   TextStyle bodyStyle({Color? color, double fontSize = 14}) => TextStyle(
     fontSize: fontSize,
     color: color ?? textoCor,
@@ -119,14 +122,82 @@ class ConfigRodape {
 }
 
 // =============================================================
-// CONFIGURAÇÃO PARA PÁGINAS DE PRODUTO (Restaurado)
+// CONFIGURAÇÃO PARA PÁGINAS DE PRODUTO
 // =============================================================
 class ConfigProduto {
   Color tituloCor = TemaSite.corSecundaria;
   Color precoCor = TemaSite.corPrimaria;
   Color carrinhoBotaoFundo = TemaSite.corPrimaria;
   Color carrinhoBotaoTexto = Colors.white;
-  Color abasAtivaCor = TemaSite.corPrimaria; // Usado em laco.dart
+  Color abasAtivaCor = TemaSite.corPrimaria;
   Color abasInativaCor = Colors.grey.shade600;
   Color thumbnailBordaCor = TemaSite.corPrimaria;
+}
+
+// =============================================================
+// CONFIGURAÇÃO EXCLUSIVA PARA RELATÓRIOS
+// =============================================================
+class ConfigRelatorio {
+  // 🎨 Cores base
+  final Color fundoPagina = Colors.white;
+  final Color fundoCard = Colors.white;
+  final Color bordaCard = const Color(0xFFE0E0E0);
+
+  final Color corTitulo = TemaSite.corSecundaria;
+  final Color corSubtitulo = const Color(0xFF616161);
+  final Color corTexto = const Color(0xFF424242);
+
+  // 🎯 Cores de status
+  final Color sucesso = const Color(0xFF4CAF50);
+  final Color informativo = const Color(0xFF2196F3);
+  final Color aviso = const Color(0xFFFF9800);
+  final Color erro = Colors.red;
+
+  // 📐 Layout
+  final double paddingPagina = 24;
+  final double paddingCard = 16;
+  final double borderRadius = 12;
+
+  // 🔤 Tipografia
+  final String fonte = TemaSite.fontePrincipal;
+
+  TextStyle tituloRelatorio() => TextStyle(
+    fontSize: 24,
+    fontWeight: FontWeight.bold,
+    color: corTitulo,
+    fontFamily: fonte,
+  );
+
+  TextStyle subtitulo() => TextStyle(
+    fontSize: 16,
+    fontWeight: FontWeight.w500,
+    color: corSubtitulo,
+    fontFamily: fonte,
+  );
+
+  TextStyle textoPadrao() =>
+      TextStyle(fontSize: 14, color: corTexto, fontFamily: fonte);
+
+  TextStyle kpiValor() => TextStyle(
+    fontSize: 22,
+    fontWeight: FontWeight.bold,
+    color: TemaSite.corPrimaria,
+    fontFamily: fonte,
+  );
+
+  TextStyle kpiLabel() =>
+      TextStyle(fontSize: 13, color: corSubtitulo, fontFamily: fonte);
+
+  // 📊 Estilo para tabelas
+  TextStyle tabelaHeader() => TextStyle(
+    fontSize: 14,
+    fontWeight: FontWeight.bold,
+    color: Colors.white,
+    fontFamily: fonte,
+  );
+
+  TextStyle tabelaCell() =>
+      TextStyle(fontSize: 13, color: corTexto, fontFamily: fonte);
+
+  Color tabelaHeaderFundo = TemaSite.corPrimaria;
 }

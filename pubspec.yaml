@@ -9,48 +9,66 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # Firebase
+  firebase_core: ^3.1.1
+  firebase_auth: ^5.1.1
+  firebase_storage: ^12.4.10
+  cloud_firestore: ^5.0.2
   
-  # Autenticação e Firebase
-  firebase_core: ^2.22.0
-  firebase_auth: ^4.8.0
-  firebase_auth_web: ^5.8.14
-  cloud_firestore: ^4.7.0
+  # Relatórios, PDF e Impressão
+  pdf: ^3.11.3
+  printing: ^5.14.2
+  intl: ^0.20.2
+  fl_chart: ^0.66.0
+
 
   # Gerenciamento de Estado e Navegação
-  provider: ^6.1.1
+  provider: ^6.1.2
   url_launcher: ^6.3.0
 
   # UI e Animações
   cupertino_icons: ^1.0.8
-  font_awesome_flutter: ^10.9.1
-  flutter_card_swiper: ^4.0.0
+  font_awesome_flutter: ^10.7.0
+  flutter_card_swiper: ^7.0.1
   confetti: ^0.7.0
+  qr_flutter: ^4.1.0
   
-  # Formulários e Utilidades
-  mask_text_input_formatter: ^2.3.0
-  file_picker: ^6.0.0
-  http: ^1.1.0
-  brasil_fields: ^1.6.0
-  validatorless: ^1.0.0
+  # Utilidades
+  mask_text_input_formatter: ^2.5.0
+  file_picker: ^8.0.0
+  http: ^1.2.1
+  brasil_fields: ^1.15.0
+  validatorless: ^1.2.5
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
-  qr_flutter: ^4.1.0
 
 flutter:
   uses-material-design: true
+
   assets:
-    - assets/imagens/carousel/
+    # Imagens Gerais e Logo
     - assets/imagens/logo.png
-    - assets/imagens/produtos/tiaras/
+    - assets/imagens/banner_principal.png
+    
+    # Pastas de Categorias (O Flutter precisa da barra final para incluir todos os arquivos da pasta)
+    - assets/imagens/carousel/
     - assets/imagens/icons/
-    - assets/imagens/produtos/lacos/
     - assets/imagens/payments/
     - assets/imagens/social/
-    - assets/imagens/banner_principal.png
     - assets/imagens/tela_fundo/
+    - assets/imagens/clientes/
+    
+    # Estrutura de Produtos
+    - assets/imagens/produtos/tiaras/
+    - assets/imagens/produtos/lacos/
+    
+    # Ícones Personalizados (Arquivos específicos ou a pasta toda)
     - assets/imagens/icones_personalizados/laco.png
     - assets/imagens/icones_personalizados/tiara.png
     - assets/imagens/icones_personalizados/presilha.png

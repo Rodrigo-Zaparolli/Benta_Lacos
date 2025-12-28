@@ -7,7 +7,7 @@ import 'dart:async';
 import 'package:benta_lacos/tema/tema_site.dart';
 import 'package:benta_lacos/repository/product_repository.dart';
 import 'package:benta_lacos/cards/categorias/lacos_card.dart';
-import 'package:benta_lacos/produtos/laco.dart'; // Para abrir a LacoPage
+import 'package:benta_lacos/produtos/lacos.dart'; // Para abrir a LacoPage
 
 class SuggestedProductsCarousel extends StatefulWidget {
   const SuggestedProductsCarousel({super.key});

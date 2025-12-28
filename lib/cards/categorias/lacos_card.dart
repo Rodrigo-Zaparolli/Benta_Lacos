@@ -1,35 +1,29 @@
 import 'package:benta_lacos/models/product.dart';
-import 'package:benta_lacos/produtos/laco.dart';
+import 'package:benta_lacos/produtos/lacos.dart';
 import 'package:benta_lacos/models/providers/cart_provider.dart';
 import 'package:benta_lacos/tema/tema_site.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+// Função de imagem corrigida para usar apenas a imageUrl do novo modelo
 Widget buildProductImage(Product product, {double? width, double? height}) {
-  if (product.imageBytes != null && product.imageBytes!.isNotEmpty) {
-    return Image.memory(
-      product.imageBytes!,
+  if (product.imageUrl != null && product.imageUrl!.isNotEmpty) {
+    return Image.network(
+      product.imageUrl!,
       width: width,
       height: height,
       fit: BoxFit.cover,
+      // Caso o link esteja quebrado, mostra um ícone de erro
+      errorBuilder: (context, error, stackTrace) => Container(
+        width: width,
+        height: height,
+        color: Colors.grey.shade200,
+        child: const Icon(Icons.broken_image, color: Colors.grey),
+      ),
     );
-  } else if (product.imagePath != null && product.imagePath!.isNotEmpty) {
-    if (product.imagePath!.startsWith('http')) {
-      return Image.network(
-        product.imagePath!,
-        width: width,
-        height: height,
-        fit: BoxFit.cover,
-      );
-    } else {
-      return Image.asset(
-        product.imagePath!,
-        width: width,
-        height: height,
-        fit: BoxFit.cover,
-      );
-    }
   }
+
+  // Se não houver link nenhum, mostra o placeholder
   return Container(
     width: width,
     height: height,
@@ -73,7 +67,7 @@ class _LacoCardState extends State<LacoCard> {
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
-              if (hover) BoxShadow(color: Colors.black12, blurRadius: 10),
+              if (hover) const BoxShadow(color: Colors.black12, blurRadius: 10),
             ],
             border: Border.all(color: Colors.grey.shade200),
           ),
@@ -81,8 +75,13 @@ class _LacoCardState extends State<LacoCard> {
             children: [
               Expanded(
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: buildProductImage(widget.product),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(12),
+                  ),
+                  child: buildProductImage(
+                    widget.product,
+                    width: double.infinity,
+                  ),
                 ),
               ),
               Padding(
@@ -90,35 +89,54 @@ class _LacoCardState extends State<LacoCard> {
                 child: Text(
                   widget.product.name,
                   style: const TextStyle(fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               Text(
                 'R\$ ${widget.product.price.toStringAsFixed(2)}',
-                style: TextStyle(color: TemaSite.corPrimaria, fontSize: 18),
+                style: TextStyle(
+                  color: TemaSite.corPrimaria,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 10),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: TemaSite.corPrimaria,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
                 onPressed: () {
-                  // 1. Adiciona o item
-                  context.read<CartProvider>().addItem(widget.product, 1);
+                  // 1. Adiciona o item ao carrinho
+                  context.read<CartProvider>().addItem(widget.product);
 
-                  // 2. Abre a gaveta lateral para o usuário ver o item entrando
-                  Scaffold.of(context).openEndDrawer();
+                  // 2. Tenta abrir a gaveta (se existir no Scaffold pai)
+                  try {
+                    Scaffold.of(context).openEndDrawer();
+                  } catch (e) {
+                    // Se não houver drawer, apenas segue
+                  }
 
-                  // 3. Feedback rápido
+                  // 3. Feedback visual
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Adicionado ao carrinho!'),
-                      duration: Duration(seconds: 1),
+                    SnackBar(
+                      content: Text('${widget.product.name} adicionado! 🎀'),
+                      backgroundColor: TemaSite.corPrimaria,
+                      duration: const Duration(seconds: 1),
                     ),
                   );
                 },
                 child: const Text(
                   'COMPRAR',
-                  style: TextStyle(color: Colors.white),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               const SizedBox(height: 10),

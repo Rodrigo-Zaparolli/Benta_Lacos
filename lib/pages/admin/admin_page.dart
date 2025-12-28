@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 import '../../tema/tema_site.dart';
 import '../../repository/product_repository.dart';
 import '../../models/product.dart';
 import '../../widgets/product_form.dart';
+import 'relatorios/relatorios_page.dart';
 
 class AdminPage extends StatefulWidget {
   const AdminPage({super.key});
@@ -14,6 +18,8 @@ class AdminPage extends StatefulWidget {
 class _AdminPageState extends State<AdminPage> {
   String _categoriaSelecionada = 'Todos';
   String _buscaQuery = '';
+  bool _isAdmin = false;
+  bool _isLoading = true;
 
   final List<String> _categorias = [
     'Todos',
@@ -27,6 +33,8 @@ class _AdminPageState extends State<AdminPage> {
   @override
   void initState() {
     super.initState();
+    _checkAdminAccess();
+    // Escuta mudanças no repositório para atualizar a lista automaticamente
     ProductRepository.instance.addListener(_onChanged);
   }
 
@@ -40,50 +48,205 @@ class _AdminPageState extends State<AdminPage> {
     if (mounted) setState(() {});
   }
 
-  int _getCountByCategory(List<Product> products, String category) {
-    if (category == 'Todos') return products.length;
-    return products.where((p) => p.category == category).length;
-  }
-
-  double _getValueByCategory(List<Product> products, String category) {
-    if (category == 'Todos') {
-      return products.fold(0, (sum, item) => sum + item.price);
+  /// Verifica se o usuário logado tem perfil 'admin' no Firestore
+  Future<void> _checkAdminAccess() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      _denyAccess();
+      return;
     }
-    return products
-        .where((p) => p.category == category)
-        .fold(0, (sum, item) => sum + item.price);
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('usuarios')
+          .doc(user.uid)
+          .get();
+
+      if (doc.exists && doc.data()?['tipo'] == 'admin') {
+        if (mounted) {
+          setState(() {
+            _isAdmin = true;
+            _isLoading = false;
+          });
+          _verificarAniversariantes();
+        }
+      } else {
+        _denyAccess();
+      }
+    } catch (e) {
+      _denyAccess();
+    }
   }
 
+  void _denyAccess() {
+    if (mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Acesso restrito ao administrador.')),
+        );
+        Navigator.of(context).pushReplacementNamed('/home');
+      });
+    }
+  }
+
+  /// Busca usuários que fazem aniversário nos próximos 7 dias
+  Future<void> _verificarAniversariantes() async {
+    try {
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('usuarios')
+          .get();
+      DateTime hoje = DateTime.now();
+      List<Map<String, dynamic>> aniversariantes = [];
+
+      for (var doc in querySnapshot.docs) {
+        final data = doc.data();
+        if (data['dataNascimento'] != null) {
+          DateTime dataNasc;
+          if (data['dataNascimento'] is Timestamp) {
+            dataNasc = (data['dataNascimento'] as Timestamp).toDate();
+          } else {
+            dataNasc = DateFormat("dd/MM/yyyy").parse(data['dataNascimento']);
+          }
+
+          DateTime aniversarioEsteAno = DateTime(
+            hoje.year,
+            dataNasc.month,
+            dataNasc.day,
+          );
+          int diferenca = aniversarioEsteAno
+              .difference(DateTime(hoje.year, hoje.month, hoje.day))
+              .inDays;
+
+          if (diferenca >= 0 && diferenca <= 7) {
+            aniversariantes.add({
+              'nome': data['nome'] ?? 'Cliente sem nome',
+              'dia': DateFormat('dd/MM').format(dataNasc),
+              'falta': diferenca == 0 ? "HOJE!" : "em $diferenca dias",
+            });
+          }
+        }
+      }
+
+      if (aniversariantes.isNotEmpty && mounted) {
+        _exibirPopUpAniversariantes(aniversariantes);
+      }
+    } catch (e) {
+      debugPrint("Erro ao buscar aniversariantes: $e");
+    }
+  }
+
+  void _exibirPopUpAniversariantes(List<Map<String, dynamic>> lista) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        title: const Row(
+          children: [
+            Icon(Icons.cake, color: TemaSite.corPrimaria),
+            SizedBox(width: 10),
+            Text("Aniversariantes da Semana"),
+          ],
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.separated(
+            shrinkWrap: true,
+            itemCount: lista.length,
+            separatorBuilder: (_, __) => const Divider(),
+            itemBuilder: (context, index) {
+              final item = lista[index];
+              return ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: TemaSite.corPrimaria.withOpacity(0.1),
+                  child: const Icon(
+                    Icons.person,
+                    color: TemaSite.corPrimaria,
+                    size: 20,
+                  ),
+                ),
+                title: Text(
+                  item['nome'],
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                subtitle: Text("Dia ${item['dia']} - ${item['falta']}"),
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text(
+              "FECHAR",
+              style: TextStyle(color: TemaSite.corPrimaria),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Abre o formulário e aguarda o salvamento para evitar tela em branco
   void _openForm(Product? p) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => ProductForm(
+      builder: (context) => ProductForm(
         product: p,
-        onSave: (prod) {
+        onSave: (prod) async {
+          // O processamento ocorre dentro do ProductForm,
+          // aqui apenas invocamos o repositório e aguardamos a conclusão.
           if (p == null) {
-            ProductRepository.instance.addProduct(prod);
+            await ProductRepository.instance.addProduct(prod);
           } else {
-            ProductRepository.instance.updateProduct(prod);
+            await ProductRepository.instance.updateProduct(prod);
           }
-          Navigator.pop(context);
         },
+      ),
+    );
+  }
+
+  void _confirmDelete(Product p) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Excluir?'),
+        content: Text('Deseja remover "${p.name}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () async {
+              await ProductRepository.instance.deleteProduct(p.id);
+              if (mounted) Navigator.pop(ctx);
+            },
+            child: const Text('Excluir', style: TextStyle(color: Colors.red)),
+          ),
+        ],
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final allProducts = ProductRepository.instance.products;
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(color: TemaSite.corPrimaria),
+        ),
+      );
+    }
 
+    final allProducts = ProductRepository.instance.products;
     final filteredProducts = allProducts.where((p) {
+      final category = p.category ?? 'Sem Categoria';
       final matchesBusca = p.name.toLowerCase().contains(
         _buscaQuery.toLowerCase(),
       );
       final matchesCategoria =
-          _categoriaSelecionada == 'Todos' ||
-          p.category == _categoriaSelecionada;
+          _categoriaSelecionada == 'Todos' || category == _categoriaSelecionada;
       return matchesBusca && matchesCategoria;
     }).toList();
 
@@ -91,11 +254,8 @@ class _AdminPageState extends State<AdminPage> {
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
         title: Text(
-          'Dashboard Benta Laços',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: TemaSite.admin.fonteTituloAppBar,
-          ),
+          'Gerenciamento Benta Laços',
+          style: TextStyle(fontSize: TemaSite.admin.fonteTituloAppBar),
         ),
         flexibleSpace: Container(
           decoration: BoxDecoration(
@@ -105,119 +265,22 @@ class _AdminPageState extends State<AdminPage> {
             ),
           ),
         ),
-        foregroundColor: Colors.white,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
       ),
       body: CustomScrollView(
         slivers: [
-          // SEÇÃO 1: MÉTRICAS (QUANTIDADES)
-          _buildSectionTitle("Estoque (Quantidades)"),
-          _buildResponsiveGrid(
-            itemCount: _categorias.length,
-            builder: (context, index) {
-              final cat = _categorias[index];
-              final count = _getCountByCategory(allProducts, cat);
-              return _buildStatCard(
-                cat == 'Todos' ? 'Produtos' : cat,
-                count.toString(),
-                cat == 'Todos' ? Icons.inventory_2 : Icons.tag,
-                cat == 'Todos' ? Colors.blue : TemaSite.corPrimaria,
-              );
-            },
-          ),
-
-          // SEÇÃO 2: MÉTRICAS (FINANCEIRO)
-          _buildSectionTitle("Financeiro (R\$)"),
-          _buildResponsiveGrid(
-            itemCount: _categorias.length,
-            builder: (context, index) {
-              final cat = _categorias[index];
-              final value = _getValueByCategory(allProducts, cat);
-              return _buildStatCard(
-                cat == 'Todos' ? 'Total' : cat,
-                'R\$ ${value.toStringAsFixed(2)}',
-                Icons.payments_outlined,
-                cat == 'Todos' ? Colors.green : Colors.green.shade400,
-              );
-            },
-          ),
-
-          // --- BARRA DE BUSCA E FILTROS ---
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 32, 16, 8),
-              child: Column(
-                children: [
-                  TextField(
-                    onChanged: (value) => setState(() => _buscaQuery = value),
-                    style: const TextStyle(fontSize: 14),
-                    decoration: InputDecoration(
-                      hintText: 'Buscar produto...',
-                      prefixIcon: const Icon(
-                        Icons.search,
-                        size: 20,
-                        color: TemaSite.corPrimaria,
-                      ),
-                      isDense: true,
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    height: 40,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: _categorias.length,
-                      itemBuilder: (context, index) {
-                        final cat = _categorias[index];
-                        final isSelected = _categoriaSelecionada == cat;
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: ChoiceChip(
-                            label: Text(
-                              cat,
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                            selected: isSelected,
-                            selectedColor: TemaSite.corPrimaria,
-                            labelStyle: TextStyle(
-                              color: isSelected ? Colors.white : Colors.black87,
-                              fontWeight: isSelected
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
-                            ),
-                            onSelected: (_) =>
-                                setState(() => _categoriaSelecionada = cat),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
+          _buildBannerRelatorios(),
+          _buildSectionTitle("Estoque"),
+          _buildCategoryChips(),
+          _buildSearchBar(),
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, i) => _buildProductItem(filteredProducts[i]),
+                childCount: filteredProducts.length,
               ),
             ),
           ),
-
-          // --- LISTAGEM DE PRODUTOS ---
-          filteredProducts.isEmpty
-              ? const SliverFillRemaining(
-                  child: Center(child: Text('Nenhum item encontrado.')),
-                )
-              : SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, i) => _buildProductItem(filteredProducts[i]),
-                      childCount: filteredProducts.length,
-                    ),
-                  ),
-                ),
           const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
       ),
@@ -226,142 +289,63 @@ class _AdminPageState extends State<AdminPage> {
         onPressed: () => _openForm(null),
         icon: const Icon(Icons.add, color: Colors.white),
         label: const Text(
-          'NOVO PRODUTO',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 13,
-          ),
+          'CADASTRAR',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
-      ),
-    );
-  }
-
-  // --- COMPONENTES DE LAYOUT RESPONSIVO ---
-
-  Widget _buildSectionTitle(String title) {
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
-        child: Text(title, style: TemaSite.admin.styleTituloSecao()),
-      ),
-    );
-  }
-
-  Widget _buildResponsiveGrid({
-    required int itemCount,
-    required Widget Function(BuildContext, int) builder,
-  }) {
-    return SliverPadding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      sliver: SliverGrid(
-        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: 180, // Largura máxima de cada card
-          mainAxisSpacing: 10,
-          crossAxisSpacing: 10,
-          childAspectRatio: 2.2, // Proporção ideal para layout horizontal
-        ),
-        delegate: SliverChildBuilderDelegate(builder, childCount: itemCount),
-      ),
-    );
-  }
-
-  Widget _buildStatCard(
-    String title,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: TemaSite.admin.corCardFundo,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6),
-        ],
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // LINHA 1: ÍCONE + TÍTULO (HORIZONTAL)
-          Row(
-            children: [
-              Icon(icon, color: color, size: 16),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: TemaSite.admin.fonteCardTitulo,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          // LINHA 2: VALOR
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(value, style: TemaSite.admin.styleCardValor()),
-          ),
-        ],
       ),
     );
   }
 
   Widget _buildProductItem(Product p) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey.shade200),
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.grey.shade200),
       ),
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+        contentPadding: const EdgeInsets.all(12),
         leading: ClipRRect(
-          borderRadius: BorderRadius.circular(6),
-          child: SizedBox(
-            width: 40,
-            height: 40,
-            child: p.imageBytes != null
-                ? Image.memory(p.imageBytes!, fit: BoxFit.cover)
-                : const Icon(Icons.image, color: Colors.grey, size: 20),
-          ),
+          borderRadius: BorderRadius.circular(8),
+          child: (p.imageUrl != null && p.imageUrl!.isNotEmpty)
+              ? Image.network(
+                  p.imageUrl!,
+                  width: 55,
+                  height: 55,
+                  fit: BoxFit.cover,
+                  errorBuilder: (ctx, err, stack) => _buildPlaceholder(),
+                )
+              : _buildPlaceholder(),
         ),
         title: Text(
           p.name,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        subtitle: Text(
-          'R\$ ${p.price.toStringAsFixed(2)} • ${p.category}',
-          style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              p.category ?? 'Sem Categoria',
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+            Text(
+              'R\$ ${p.price.toStringAsFixed(2)}',
+              style: const TextStyle(
+                color: TemaSite.corPrimaria,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
         ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
-              icon: const Icon(
-                Icons.edit_outlined,
-                color: Colors.blue,
-                size: 18,
-              ),
+              icon: const Icon(Icons.edit_outlined, color: Colors.blue),
               onPressed: () => _openForm(p),
             ),
             IconButton(
-              icon: const Icon(
-                Icons.delete_sweep_outlined,
-                color: Colors.redAccent,
-                size: 18,
-              ),
+              icon: const Icon(Icons.delete_outline, color: Colors.red),
               onPressed: () => _confirmDelete(p),
             ),
           ],
@@ -370,28 +354,113 @@ class _AdminPageState extends State<AdminPage> {
     );
   }
 
-  void _confirmDelete(Product p) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text(
-          'Excluir?',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+  Widget _buildPlaceholder() {
+    return Container(
+      width: 55,
+      height: 55,
+      color: TemaSite.corPrimaria.withOpacity(0.1),
+      child: const Icon(
+        Icons.image_outlined,
+        color: TemaSite.corPrimaria,
+        size: 20,
+      ),
+    );
+  }
+
+  Widget _buildBannerRelatorios() {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: InkWell(
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const RelatoriosPage()),
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [TemaSite.corPrimaria, Color(0xFFF06292)],
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.analytics_outlined, color: Colors.white, size: 30),
+                SizedBox(width: 15),
+                Expanded(
+                  child: Text(
+                    "Ver Relatórios de Vendas",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Icon(Icons.chevron_right, color: Colors.white),
+              ],
+            ),
+          ),
         ),
-        content: Text('Remover "${p.name}" da base de dados?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
+      ),
+    );
+  }
+
+  Widget _buildCategoryChips() {
+    return SliverToBoxAdapter(
+      child: SizedBox(
+        height: 50,
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemCount: _categorias.length,
+          itemBuilder: (context, index) {
+            final cat = _categorias[index];
+            final isSelected = _categoriaSelecionada == cat;
+            return Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: ChoiceChip(
+                label: Text(cat),
+                selected: isSelected,
+                selectedColor: TemaSite.corPrimaria,
+                labelStyle: TextStyle(
+                  color: isSelected ? Colors.white : Colors.black,
+                ),
+                onSelected: (v) => setState(() => _categoriaSelecionada = cat),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: TextField(
+          onChanged: (v) => setState(() => _buscaQuery = v),
+          decoration: InputDecoration(
+            hintText: "Buscar laço...",
+            prefixIcon: const Icon(Icons.search),
+            fillColor: Colors.white,
+            filled: true,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
           ),
-          TextButton(
-            onPressed: () {
-              ProductRepository.instance.deleteProduct(p.id);
-              Navigator.pop(ctx);
-            },
-            child: const Text('Excluir', style: TextStyle(color: Colors.red)),
-          ),
-        ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 10),
+        child: Text(title, style: TemaSite.admin.styleTituloSecao()),
       ),
     );
   }

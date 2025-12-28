@@ -1,41 +1,42 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Import necessário
 import 'package:benta_lacos/models/providers/cart_provider.dart';
 import 'package:benta_lacos/tema/tema_site.dart';
 import 'package:benta_lacos/models/product.dart';
-import '../payment/payment_page.dart';
+import '../checkout/checkout_page.dart'; // Import da sua página de checkout
 
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Escutando as mudanças do carrinho
     final cart = Provider.of<CartProvider>(context);
 
-    // Dados fictícios para o exemplo (no futuro virão do login)
-    const String nomeClienteLogado = "Cliente Benta Laços";
-    const String cepClienteLogado = "00000-000";
-
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: TemaSite.corFundoRodape,
       appBar: AppBar(
+        backgroundColor: TemaSite.corPrimaria,
+        elevation: 0,
+        centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.close, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           'Meu Carrinho',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 0.5,
+          ),
         ),
-        backgroundColor: TemaSite.corPrimaria,
-        elevation: 0,
       ),
       body: Column(
         children: [
           Expanded(
             child: cart.items.isEmpty
-                ? const Center(child: Text("Seu carrinho está vazio 🎀"))
+                ? _buildCarrinhoVazio()
                 : ListView.builder(
                     padding: const EdgeInsets.all(16),
                     itemCount: cart.items.length,
@@ -45,11 +46,22 @@ class CartScreen extends StatelessWidget {
                     },
                   ),
           ),
-          _buildBotaoProsseguir(
-            context,
-            cart,
-            nomeClienteLogado,
-            cepClienteLogado,
+          _buildResumo(context, cart),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCarrinhoVazio() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: const [
+          Icon(Icons.shopping_bag_outlined, size: 80, color: Colors.grey),
+          SizedBox(height: 16),
+          Text(
+            "Seu carrinho está vazio 🎀",
+            style: TextStyle(fontSize: 18, color: Colors.grey),
           ),
         ],
       ),
@@ -61,84 +73,90 @@ class CartScreen extends StatelessWidget {
     CartProvider cart,
     dynamic item,
   ) {
+    final Product produto = item.product;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF5EE), // Cor pêssego suave das suas imagens
-        borderRadius: BorderRadius.circular(15),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         children: [
-          // IMAGEM DO PRODUTO
           ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: _gerarImagem(item.product),
+            borderRadius: BorderRadius.circular(12),
+            child: SizedBox(
+              width: 70,
+              height: 70,
+              child: _gerarImagem(produto),
+            ),
           ),
           const SizedBox(width: 12),
-
-          // NOME E PREÇO
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  item.product.name,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                  produto.name,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
+                const SizedBox(height: 4),
                 Text(
-                  "R\$ ${(item.product.price * item.quantity).toStringAsFixed(2)}",
+                  "R\$ ${produto.price.toStringAsFixed(2)}",
+                  style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "Subtotal: R\$ ${(produto.price * item.quantity).toStringAsFixed(2)}",
                   style: const TextStyle(
                     color: TemaSite.corPrimaria,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
             ),
           ),
-
-          // CONTROLES DE QUANTIDADE (- E +)
-          Row(
+          Column(
             children: [
-              IconButton(
-                visualDensity: VisualDensity.compact,
-                icon: const Icon(
-                  Icons.remove_circle_outline,
-                  color: Colors.grey,
-                ),
-                onPressed: () {
-                  // Diminuir quantidade (garanta que este método existe no seu provider)
-                  cart.removeSingleItem(item.product.id);
-                },
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.remove_circle_outline),
+                    color: Colors.grey,
+                    onPressed: () => cart.removeSingleItem(produto.id),
+                  ),
+                  Text(
+                    "${item.quantity}",
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.add_circle_outline),
+                    color: TemaSite.corPrimaria,
+                    onPressed: () => cart.addItem(produto),
+                  ),
+                ],
               ),
-              Text(
-                "${item.quantity}",
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
+              TextButton(
+                onPressed: () => cart.clearItem(produto.id),
+                child: const Text(
+                  "Remover",
+                  style: TextStyle(color: Colors.redAccent, fontSize: 12),
                 ),
-              ),
-              IconButton(
-                visualDensity: VisualDensity.compact,
-                icon: const Icon(
-                  Icons.add_circle_outline,
-                  color: TemaSite.corPrimaria,
-                ),
-                onPressed: () {
-                  // Aumentar quantidade
-                  cart.addItem(item.product);
-                },
               ),
             ],
-          ),
-
-          // BOTÃO LIXEIRA (REMOVER TUDO)
-          IconButton(
-            icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-            onPressed: () {
-              // Remover item completamente
-              cart.clearItem(item.product.id);
-            },
           ),
         ],
       ),
@@ -146,57 +164,45 @@ class CartScreen extends StatelessWidget {
   }
 
   Widget _gerarImagem(Product p) {
-    if (p.imageBytes != null) {
-      return Image.memory(
-        p.imageBytes!,
-        width: 60,
-        height: 60,
+    if (p.imageUrl != null && p.imageUrl!.isNotEmpty) {
+      return Image.network(
+        p.imageUrl!,
         fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) =>
+            const Icon(Icons.broken_image, color: Colors.grey),
       );
     }
-    if (p.imagePath != null) {
-      return Image.asset(
-        p.imagePath!,
-        width: 60,
-        height: 60,
-        fit: BoxFit.cover,
-      );
-    }
-    return const Icon(Icons.image, size: 60);
+    return Container(
+      color: Colors.grey[200],
+      child: const Icon(Icons.image, color: Colors.grey),
+    );
   }
 
-  Widget _buildBotaoProsseguir(
-    BuildContext context,
-    CartProvider cart,
-    String nome,
-    String cep,
-  ) {
+  Widget _buildResumo(BuildContext context, CartProvider cart) {
     return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: const BoxDecoration(
-        color: Color(0xFFFDFBFA),
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(30),
-          topRight: Radius.circular(30),
-        ),
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 30),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black12,
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
-            offset: Offset(0, -5),
+            offset: const Offset(0, -4),
           ),
         ],
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text("Total:", style: TextStyle(fontSize: 18)),
+              const Text("Total do Pedido", style: TextStyle(fontSize: 16)),
               Text(
                 "R\$ ${cart.total.toStringAsFixed(2)}",
                 style: const TextStyle(
-                  fontSize: 22,
+                  fontSize: 24,
                   fontWeight: FontWeight.bold,
                   color: TemaSite.corPrimaria,
                 ),
@@ -207,35 +213,51 @@ class CartScreen extends StatelessWidget {
           ElevatedButton(
             onPressed: cart.items.isEmpty
                 ? null
-                : () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => PaymentPage(
-                          cart: cart,
-                          nomeCliente: nome,
-                          cepCliente: cep,
-                        ),
-                      ),
-                    );
-                  },
+                : () =>
+                      _verificarAutenticacao(context), // Chamada da verificação
             style: ElevatedButton.styleFrom(
               backgroundColor: TemaSite.corPrimaria,
               minimumSize: const Size(double.infinity, 55),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15),
+                borderRadius: BorderRadius.circular(16),
               ),
             ),
             child: const Text(
-              "PROSSEGUIR PARA PAGAMENTO",
+              "FINALIZAR COMPRA",
               style: TextStyle(
-                color: Colors.white,
                 fontWeight: FontWeight.bold,
+                letterSpacing: 1.1,
+                color: Colors.white,
               ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  // [NOVO]: Função para validar se o usuário está logado
+  void _verificarAutenticacao(BuildContext context) {
+    final User? user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      // Se não estiver logado, avisa o usuário e manda para o login
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Por favor, faça login para finalizar seu pedido 🎀"),
+          backgroundColor: Colors.orange,
+        ),
+      );
+
+      // Aqui você redireciona para sua LoginPage
+      // Navigator.pushNamed(context, '/login');
+      // Ou usando Navigator.push se preferir
+    } else {
+      // Se estiver logado, vai direto para o Checkout
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const CheckoutPage()),
+      );
+    }
   }
 }
