@@ -1,15 +1,15 @@
 import 'package:benta_lacos/pages/admin/relatorios/widgets/card_metricas_clientes.dart';
 import 'package:benta_lacos/pages/admin/relatorios/widgets/card_ultimos_clientes.dart';
-import 'package:benta_lacos/pages/admin/relatorios/widgets/card_produtos.dart.dart';
+import 'package:benta_lacos/pages/admin/relatorios/widgets/card_produtos.dart';
 import 'package:benta_lacos/pages/admin/relatorios/widgets/card_visualizados.dart';
 import 'package:benta_lacos/pages/admin/relatorios/widgets/services/pdf_service.dart';
-import 'package:benta_lacos/tema/tema_site.dart';
+import 'package:benta_lacos/shared/theme/tema_site.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'widgets/sidebar_filtros.dart';
-import 'widgets/cards_resumo.dart';
-import 'widgets/cards_categorias.dart';
+import 'widgets/card_resumo.dart';
+import 'widgets/card_categorias.dart';
 import 'widgets/grafico_evolucao.dart';
 import 'widgets/grafico_pagamentos.dart';
 import 'widgets/grafico_envio.dart';

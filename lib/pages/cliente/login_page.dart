@@ -3,9 +3,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:validatorless/validatorless.dart';
 
-import '../../secoes/cabecalho/cabecalho.dart';
-import '../../widgets/background_fundo.dart';
-import '../../tema/tema_site.dart';
+import '../../shared/sections/header/cabecalho.dart';
+import '../../shared/widgets/background_fundo.dart';
+import '../../shared/theme/tema_site.dart';
 import 'criar_conta_page.dart';
 import 'reset_senha_page.dart';
 

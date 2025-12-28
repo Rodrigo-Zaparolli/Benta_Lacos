@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../secoes/cabecalho/cabecalho.dart';
-import '../../secoes/rodape/rodape.dart';
-import '../../widgets/background_fundo.dart';
+import '../../shared/sections/header/cabecalho.dart';
+import '../../shared/sections/footer/rodape.dart';
+import '../../shared/widgets/background_fundo.dart';
 import 'login_page.dart'; // Página de login
 
 class DashboardClientePage extends StatefulWidget {

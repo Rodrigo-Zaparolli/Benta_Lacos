@@ -7,16 +7,16 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 // Firebase
-import 'firebase/firebase_options.dart';
-import 'tema/tema_site.dart';
-import 'repository/product_repository.dart';
-import 'models/providers/cart_provider.dart';
+import 'core/firebase/firebase_options.dart';
+import 'shared/theme/tema_site.dart';
+import 'domain/repository/product_repository.dart';
+import 'domain/providers/cart_provider.dart';
 
 // Páginas
-import 'pages/cliente/home_page.dart';
+import 'pages/home/home_page.dart';
 import 'pages/cliente/login_page.dart';
 import 'pages/cliente/criar_conta_page.dart';
-import 'pages/admin/admin_page.dart';
+import 'pages/admin/login/admin_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

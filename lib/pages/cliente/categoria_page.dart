@@ -1,28 +1,31 @@
-import 'package:benta_lacos/produtos/lacos.dart';
+import 'package:benta_lacos/domain/catalog/lacos.dart';
 import 'package:flutter/material.dart';
-import '../../repository/product_repository.dart';
-import '../../cards/categorias/lacos_card.dart';
-import '../../tema/tema_site.dart';
-import '../../widgets/background_fundo.dart';
-import '../../secoes/cabecalho/cabecalho.dart'; // Import do cabeçalho
-import '../../secoes/rodape/rodape.dart'; // Import do rodapé
-import '../../secoes/carrossel/carrossel_veja.dart'; // Import do veja também
+import '../../domain/repository/product_repository.dart';
+import '../../shared/constants/card.dart';
+import '../../shared/theme/tema_site.dart';
+import '../../shared/widgets/background_fundo.dart';
+import '../../shared/sections/header/cabecalho.dart';
+import '../../shared/sections/footer/rodape.dart';
 
 class CategoriaPage extends StatelessWidget {
   final String categoriaNome;
+  final bool isBusca;
 
-  const CategoriaPage({super.key, required this.categoriaNome});
+  const CategoriaPage({
+    super.key,
+    required this.categoriaNome,
+    this.isBusca = false, // ✅ valor padrão evita erros
+  });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Removida a AppBar padrão do Scaffold para usar o seu Cabecalho customizado
       body: Column(
         children: [
-          // 1. Cabeçalho (Ele já gerencia login/logout internamente)
+          // Cabeçalho
           const Cabecalho(),
 
-          // 2. Área de Conteúdo Rolável
+          // Conteúdo
           Expanded(
             child: BackgroundFundo(
               child: SingleChildScrollView(
@@ -30,9 +33,11 @@ class CategoriaPage extends StatelessWidget {
                   children: [
                     const SizedBox(height: 40),
 
-                    // Título da Categoria
+                    // Título
                     Text(
-                      categoriaNome.toUpperCase(),
+                      isBusca
+                          ? 'RESULTADO DA BUSCA'
+                          : categoriaNome.toUpperCase(),
                       style: const TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
@@ -40,47 +45,24 @@ class CategoriaPage extends StatelessWidget {
                         letterSpacing: 2.0,
                       ),
                     ),
+
                     const SizedBox(height: 10),
                     Container(
                       width: 60,
                       height: 3,
                       color: TemaSite.corPrimaria,
                     ),
+
                     const SizedBox(height: 40),
 
-                    // Grade de Produtos
+                    // Lista de produtos
                     ListenableBuilder(
                       listenable: ProductRepository.instance,
                       builder: (context, child) {
-                        final produtosFiltrados = ProductRepository
-                            .instance
-                            .products
-                            .where((p) => p.category == categoriaNome)
-                            .toList();
+                        final produtos = _filtrarProdutos();
 
-                        if (produtosFiltrados.isEmpty) {
-                          return Container(
-                            height: 300,
-                            alignment: Alignment.center,
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.shopping_bag_outlined,
-                                  size: 60,
-                                  color: Colors.grey.withOpacity(0.5),
-                                ),
-                                const SizedBox(height: 16),
-                                const Text(
-                                  "Em breve teremos novidades nesta categoria! 🎀",
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
+                        if (produtos.isEmpty) {
+                          return _estadoVazio();
                         }
 
                         return Padding(
@@ -89,7 +71,7 @@ class CategoriaPage extends StatelessWidget {
                             spacing: 30,
                             runSpacing: 30,
                             alignment: WrapAlignment.center,
-                            children: produtosFiltrados.map((product) {
+                            children: produtos.map((product) {
                               return LacoCard(
                                 product: product,
                                 onTap: () => Navigator.push(
@@ -107,12 +89,49 @@ class CategoriaPage extends StatelessWidget {
 
                     const SizedBox(height: 60),
 
-                    // 4. Rodapé Final
+                    // Rodapé
                     const Rodape(),
                   ],
                 ),
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ===============================
+  // MÉTODOS AUXILIARES
+  // ===============================
+
+  List _filtrarProdutos() {
+    final produtos = ProductRepository.instance.products;
+
+    if (isBusca) {
+      final termo = categoriaNome.toLowerCase();
+      return produtos.where((p) {
+        return p.name.toLowerCase().contains(termo);
+      }).toList();
+    }
+
+    return produtos.where((p) => p.category == categoriaNome).toList();
+  }
+
+  Widget _estadoVazio() {
+    return Container(
+      height: 300,
+      alignment: Alignment.center,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.search_off, size: 60, color: Colors.grey.withOpacity(0.5)),
+          const SizedBox(height: 16),
+          Text(
+            isBusca
+                ? 'Nenhum produto encontrado 😕'
+                : 'Em breve teremos novidades nesta categoria! 🎀',
+            style: const TextStyle(fontSize: 16, color: Colors.grey),
           ),
         ],
       ),

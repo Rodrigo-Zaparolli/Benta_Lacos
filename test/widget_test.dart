@@ -1,11 +1,11 @@
 import 'package:benta_lacos/pages/cliente/login_page.dart';
 import 'package:flutter/material.dart';
-import 'package:benta_lacos/tema/tema_site.dart';
-import 'package:benta_lacos/pages/cliente/home_page.dart';
+import 'package:benta_lacos/shared/theme/tema_site.dart';
+import 'package:benta_lacos/pages/home/home_page.dart';
 
 // Importações do Firebase
 import 'package:firebase_core/firebase_core.dart';
-import 'package:benta_lacos/firebase/firebase_options.dart'; // Assumindo que este arquivo existe
+import 'package:benta_lacos/core/firebase/firebase_options.dart'; // Assumindo que este arquivo existe
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

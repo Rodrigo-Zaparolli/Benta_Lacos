@@ -6,9 +6,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:validatorless/validatorless.dart';
 import 'package:brasil_fields/brasil_fields.dart';
-import '../../widgets/background_fundo.dart';
-import '../../secoes/cabecalho/cabecalho.dart';
-import '../../secoes/rodape/rodape.dart';
+import '../../shared/widgets/background_fundo.dart';
+import '../../shared/sections/header/cabecalho.dart';
+import '../../shared/sections/footer/rodape.dart';
 import 'login_page.dart';
 
 class CriarContaPage extends StatefulWidget {

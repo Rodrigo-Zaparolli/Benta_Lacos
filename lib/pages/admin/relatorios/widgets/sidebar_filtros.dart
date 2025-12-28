@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../../../tema/tema_site.dart';
+import '../../../../shared/theme/tema_site.dart';
 
 class SidebarFiltros extends StatefulWidget {
   // Callbacks para comunicação com a tela principal

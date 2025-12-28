@@ -1,7 +1,7 @@
-import 'package:benta_lacos/pages/admin/admin_page.dart';
-import 'package:benta_lacos/pages/cliente/home_page.dart';
+import 'package:benta_lacos/pages/admin/login/admin_page.dart';
+import 'package:benta_lacos/pages/home/home_page.dart';
 import 'package:benta_lacos/pages/cliente/login_page.dart';
-import 'package:benta_lacos/tema/tema_site.dart';
+import 'package:benta_lacos/shared/theme/tema_site.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';

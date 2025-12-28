@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../../../tema/tema_site.dart';
+import '../../../../shared/theme/tema_site.dart';
 
 class GraficoPagamentos extends StatelessWidget {
   final List<QueryDocumentSnapshot> docs;
