@@ -1,5 +1,5 @@
 name: benta_lacos
-description: "A new Flutter project."
+description: "Projeto Flutter - Benta Laços"
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -9,34 +9,45 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+
   flutter_localizations:
     sdk: flutter
 
-  # Firebase
-  firebase_core: ^3.1.1
-  firebase_auth: ^5.1.1
-  firebase_storage: ^12.4.10
-  cloud_firestore: ^5.0.2
-  
-  # Relatórios, PDF e Impressão
+  # ========================
+  # 🔥 FIREBASE (VERSÕES COMPATÍVEIS)
+  # ========================
+  firebase_core: ^3.6.0
+  firebase_auth: ^5.3.0
+  cloud_firestore: ^5.4.0
+  firebase_storage: ^12.3.0
+
+  # ========================
+  # 📄 PDF / RELATÓRIOS
+  # ========================
   pdf: ^3.11.3
-  printing: ^5.14.2
+  printing: ^5.13.1
   intl: ^0.20.2
   fl_chart: ^0.66.0
 
-
-  # Gerenciamento de Estado e Navegação
+  # ========================
+  # 🧠 ESTADO / NAVEGAÇÃO
+  # ========================
   provider: ^6.1.2
   url_launcher: ^6.3.0
+  flutter_slidable: ^3.0.0
 
-  # UI e Animações
+  # ========================
+  # 🎨 UI / ANIMAÇÕES
+  # ========================
   cupertino_icons: ^1.0.8
   font_awesome_flutter: ^10.7.0
   flutter_card_swiper: ^7.0.1
   confetti: ^0.7.0
   qr_flutter: ^4.1.0
-  
-  # Utilidades
+
+  # ========================
+  # 🛠️ UTILIDADES
+  # ========================
   mask_text_input_formatter: ^2.5.0
   file_picker: ^8.0.0
   http: ^1.2.1
@@ -46,29 +57,30 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+
   flutter_lints: ^3.0.0
 
 flutter:
   uses-material-design: true
 
   assets:
-    # Imagens Gerais e Logo
+    # Logos e banners
     - assets/imagens/logo.png
     - assets/imagens/banner_principal.png
-    
-    # Pastas de Categorias (O Flutter precisa da barra final para incluir todos os arquivos da pasta)
+
+    # Pastas gerais
     - assets/imagens/carousel/
     - assets/imagens/icons/
     - assets/imagens/payments/
     - assets/imagens/social/
     - assets/imagens/tela_fundo/
     - assets/imagens/clientes/
-    
-    # Estrutura de Produtos
+
+    # Produtos
     - assets/imagens/produtos/tiaras/
     - assets/imagens/produtos/lacos/
-    
-    # Ícones Personalizados (Arquivos específicos ou a pasta toda)
+
+    # Ícones personalizados
     - assets/imagens/icones_personalizados/laco.png
     - assets/imagens/icones_personalizados/tiara.png
     - assets/imagens/icones_personalizados/presilha.png
