@@ -10,7 +10,7 @@ import '../../../shared/sections/header/cabecalho_logado.dart';
 import '../../../shared/sections/footer/rodape.dart';
 import '../../cliente/login_page.dart';
 import '../../../shared/widgets/background_fundo.dart';
-import '../../../domain/models/product.dart';
+import '../../../domain/models/product_model.dart';
 import '../../../domain/repository/product_repository.dart';
 import '../../../shared/constants/card.dart';
 import '../../../shared/theme/tema_site.dart';

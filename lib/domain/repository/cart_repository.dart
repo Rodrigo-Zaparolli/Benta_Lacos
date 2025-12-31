@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:benta_lacos/domain/models/product.dart';
+import 'package:benta_lacos/domain/models/product_model.dart';
 
 class CartItem {
   final Product product;
   int quantity;
+  bool selecionado; // Adicionado para não quebrar o checkout
 
-  CartItem({required this.product, this.quantity = 1});
+  CartItem({
+    required this.product,
+    this.quantity = 1,
+    this.selecionado = true, // Adicionado
+  });
 }
 
 class CartProvider extends ChangeNotifier {
-  // Alterado para CartProvider para facilitar no Checkout
   final List<CartItem> _items = [];
 
   List<CartItem> get items => _items;
@@ -17,7 +21,6 @@ class CartProvider extends ChangeNotifier {
   double get total =>
       _items.fold(0, (sum, item) => sum + (item.product.price * item.quantity));
 
-  // Adicionar ou Aumentar
   void addItem(Product product, [int quantity = 1]) {
     final index = _items.indexWhere((item) => item.product.id == product.id);
 
@@ -29,7 +32,6 @@ class CartProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Diminuir Quantidade (-)
   void decrementQuantity(String productId) {
     final index = _items.indexWhere((item) => item.product.id == productId);
 
@@ -37,16 +39,15 @@ class CartProvider extends ChangeNotifier {
       if (_items[index].quantity > 1) {
         _items[index].quantity--;
       } else {
-        _items.removeAt(index); // Se era 1, remove do carrinho
+        _items.removeAt(index);
       }
-      notifyListeners(); // ESSENCIAL para o reset do total na tela
+      notifyListeners();
     }
   }
 
-  // Excluir Total (Lixeira)
   void removeItem(String productId) {
     _items.removeWhere((item) => item.product.id == productId);
-    notifyListeners(); // ESSENCIAL para o reset do total na tela
+    notifyListeners();
   }
 
   void clearCart() {

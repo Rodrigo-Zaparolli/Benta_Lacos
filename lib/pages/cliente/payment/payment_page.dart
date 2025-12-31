@@ -28,10 +28,9 @@ class PaymentPage extends StatefulWidget {
 class _PaymentPageState extends State<PaymentPage> {
   String metodoEntrega = 'Retirar na Loja';
   double valorFrete = 0.0;
-  String metodoPagamento = 'Pix';
+  String metodoPagamento = 'Pix'; // Valor inicial
   int parcelas = 1;
 
-  // Estados para busca de endereço e frete
   bool isLoading = true;
   String logradouro = "";
   String bairro = "";
@@ -59,7 +58,6 @@ class _PaymentPageState extends State<PaymentPage> {
     _inicializarPagina();
   }
 
-  /// Gerencia a busca do endereço e o cálculo do frete
   Future<void> _inicializarPagina() async {
     setState(() => isLoading = true);
     await _buscarEnderecoViaCep();
@@ -67,36 +65,29 @@ class _PaymentPageState extends State<PaymentPage> {
     setState(() => isLoading = false);
   }
 
-  /// Busca o endereço real pelo CEP informado
   Future<void> _buscarEnderecoViaCep() async {
-    // Remove caracteres não numéricos do CEP
     final String cepLimpo = widget.cepCliente.replaceAll(RegExp(r'[^0-9]'), '');
-
     try {
       final response = await http.get(
         Uri.parse('https://viacep.com.br/ws/$cepLimpo/json/'),
       );
-
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['erro'] == null) {
           setState(() {
-            logradouro = data['logradouro'];
-            bairro = data['bairro'];
-            cidade = data['localidade'];
-            uf = data['uf'];
+            logradouro = data['logradouro'] ?? "";
+            bairro = data['bairro'] ?? "";
+            cidade = data['localidade'] ?? "";
+            uf = data['uf'] ?? "";
           });
         }
       }
     } catch (e) {
-      debugPrint("Erro ao buscar CEP: $e");
+      debugPrint("Erro CEP: $e");
     }
   }
 
-  /// Simulação de cálculo de frete (Pode ser substituído por API do Melhor Envio/Correios)
   Future<void> _calcularFrete() async {
-    // Lógica fictícia: Frete fixo baseado na UF
-    // Rio Grande do Sul (RS) costuma ser mais barato para a Benta Laços (Nova Prata)
     if (uf == "RS") {
       precoPac = 15.90;
       precoSedex = 25.00;
@@ -104,13 +95,6 @@ class _PaymentPageState extends State<PaymentPage> {
       precoPac = 29.90;
       precoSedex = 54.90;
     }
-  }
-
-  void atualizarFrete(String metodo, double valor) {
-    setState(() {
-      metodoEntrega = metodo;
-      valorFrete = valor;
-    });
   }
 
   Future<void> enviarWhatsApp() async {
@@ -156,7 +140,7 @@ class _PaymentPageState extends State<PaymentPage> {
           style: TextStyle(color: Colors.white),
         ),
         backgroundColor: TemaSite.corPrimaria,
-        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -167,15 +151,14 @@ class _PaymentPageState extends State<PaymentPage> {
                 children: [
                   _buildInfoEndereco(),
                   const SizedBox(height: 20),
-
                   const Text(
                     "Resumo do Pedido",
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                   const SizedBox(height: 10),
                   _buildResumoItens(),
-
                   const SizedBox(height: 25),
+
                   const Text(
                     "1. Como deseja receber?",
                     style: TextStyle(fontWeight: FontWeight.bold),
@@ -190,25 +173,11 @@ class _PaymentPageState extends State<PaymentPage> {
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
 
-                  _buildOpcaoPagamento("Pix", FontAwesomeIcons.pix),
-                  if (metodoPagamento == 'Pix') _buildPainelPix(),
-
-                  _buildOpcaoPagamento("Cartão de Crédito", Icons.credit_card),
-                  if (metodoPagamento == 'Cartão de Crédito') ...[
-                    _buildPainelParcelas(totalFinal),
-                    _buildFormularioCartao(),
-                  ],
-
-                  _buildOpcaoPagamento(
-                    "Cartão de Débito",
-                    Icons.credit_card_outlined,
-                  ),
-                  if (metodoPagamento == 'Cartão de Débito')
-                    _buildFormularioCartao(),
+                  // LISTA DE OPÇÕES DE PAGAMENTO
+                  _buildListaPagamentos(totalFinal),
 
                   const SizedBox(height: 30),
                   _buildResumoFinanceiro(totalFinal),
-
                   const SizedBox(height: 20),
                   _buildBotaoFinalizar(),
                 ],
@@ -216,6 +185,129 @@ class _PaymentPageState extends State<PaymentPage> {
             ),
     );
   }
+
+  // --- WIDGET QUE GERENCIA A EXIBIÇÃO DINÂMICA ---
+  Widget _buildListaPagamentos(double totalFinal) {
+    return Column(
+      children: [
+        // OPÇÃO PIX
+        RadioListTile<String>(
+          title: const Text("Pix"),
+          secondary: const FaIcon(
+            FontAwesomeIcons.pix,
+            color: Colors.teal,
+            size: 20,
+          ),
+          value: "Pix",
+          groupValue: metodoPagamento,
+          activeColor: TemaSite.corPrimaria,
+          onChanged: (value) => setState(() => metodoPagamento = value!),
+        ),
+        if (metodoPagamento == 'Pix') _buildPainelPix(),
+
+        // OPÇÃO CRÉDITO
+        RadioListTile<String>(
+          title: const Text("Cartão de Crédito"),
+          secondary: const Icon(Icons.credit_card, color: Colors.blue),
+          value: "Cartão de Crédito",
+          groupValue: metodoPagamento,
+          activeColor: TemaSite.corPrimaria,
+          onChanged: (value) => setState(() => metodoPagamento = value!),
+        ),
+        if (metodoPagamento == 'Cartão de Crédito') ...[
+          _buildPainelParcelas(totalFinal),
+          _buildFormularioCartao(),
+        ],
+
+        // OPÇÃO DÉBITO
+        RadioListTile<String>(
+          title: const Text("Cartão de Débito"),
+          secondary: const Icon(
+            Icons.credit_card_outlined,
+            color: Colors.orange,
+          ),
+          value: "Cartão de Débito",
+          groupValue: metodoPagamento,
+          activeColor: TemaSite.corPrimaria,
+          onChanged: (value) => setState(() => metodoPagamento = value!),
+        ),
+        if (metodoPagamento == 'Cartão de Débito') _buildFormularioCartao(),
+      ],
+    );
+  }
+
+  Widget _buildPainelPix() {
+    const String chavePix = "54991147771";
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.teal.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: Colors.teal.withOpacity(0.2)),
+      ),
+      child: Column(
+        children: [
+          const Text(
+            "Pagamento Instantâneo",
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.teal),
+          ),
+          const SizedBox(height: 15),
+          // QR CODE
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: QrImageView(
+              data: chavePix,
+              version: QrVersions.auto,
+              size: 180.0,
+              gapless: false,
+            ),
+          ),
+          const SizedBox(height: 15),
+          const Text(
+            "Chave Pix (Celular):",
+            style: TextStyle(fontSize: 12, color: Colors.grey),
+          ),
+          const SizedBox(height: 5),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                chavePix,
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const SizedBox(width: 10),
+              IconButton(
+                icon: const Icon(Icons.copy, color: Colors.teal),
+                onPressed: () {
+                  Clipboard.setData(const ClipboardData(text: chavePix));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Chave Pix copiada!")),
+                  );
+                },
+              ),
+            ],
+          ),
+          const Text(
+            "Após o pagamento, envie o comprovante pelo WhatsApp.",
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.teal,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ... (Restante dos widgets auxiliares permanecem iguais ao anterior)
 
   Widget _buildInfoEndereco() {
     return Container(
@@ -239,7 +331,7 @@ class _PaymentPageState extends State<PaymentPage> {
           ),
           Text(
             logradouro.isEmpty
-                ? "Endereço não localizado"
+                ? "Carregando endereço..."
                 : "$logradouro, $bairro",
             style: const TextStyle(fontSize: 14),
           ),
@@ -283,7 +375,7 @@ class _PaymentPageState extends State<PaymentPage> {
 
   Widget _buildFormularioCartao() {
     return Container(
-      margin: const EdgeInsets.only(left: 45, top: 10, bottom: 10),
+      margin: const EdgeInsets.only(left: 10, top: 10, bottom: 10),
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
         color: Colors.grey.shade50,
@@ -301,9 +393,9 @@ class _PaymentPageState extends State<PaymentPage> {
             ),
           ),
           const SizedBox(height: 10),
-          TextField(
-            decoration: const InputDecoration(
-              labelText: "Nome impresso no Cartão",
+          const TextField(
+            decoration: InputDecoration(
+              labelText: "Nome no Cartão",
               prefixIcon: Icon(Icons.person),
             ),
           ),
@@ -334,70 +426,9 @@ class _PaymentPageState extends State<PaymentPage> {
     );
   }
 
-  Widget _buildPainelPix() {
-    const String chavePix = "54991147771";
-    return Container(
-      margin: const EdgeInsets.only(left: 45, top: 10, bottom: 10),
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Column(
-        children: [
-          const Text(
-            "Escaneie o QR Code abaixo:",
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-          ),
-          const SizedBox(height: 15),
-          QrImageView(
-            data: chavePix,
-            version: QrVersions.auto,
-            size: 160.0,
-            eyeStyle: const QrEyeStyle(
-              eyeShape: QrEyeShape.square,
-              color: Colors.black,
-            ),
-          ),
-          const SizedBox(height: 15),
-          const Divider(),
-          const Text(
-            "Ou copie a chave Pix:",
-            style: TextStyle(fontSize: 12, color: Colors.grey),
-          ),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  chavePix,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                    color: TemaSite.corPrimaria,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.copy, size: 20, color: Colors.grey),
-                onPressed: () {
-                  Clipboard.setData(const ClipboardData(text: chavePix));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Chave Pix copiada!")),
-                  );
-                },
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildPainelParcelas(double total) {
     return Container(
-      margin: const EdgeInsets.only(left: 45, top: 10, bottom: 5),
+      margin: const EdgeInsets.only(left: 10, top: 10, bottom: 5),
       child: DropdownButtonFormField<int>(
         value: parcelas,
         decoration: const InputDecoration(
@@ -426,18 +457,12 @@ class _PaymentPageState extends State<PaymentPage> {
       value: titulo,
       groupValue: metodoEntrega,
       activeColor: TemaSite.corPrimaria,
-      onChanged: (value) => atualizarFrete(value.toString(), valor),
-    );
-  }
-
-  Widget _buildOpcaoPagamento(String titulo, IconData icone) {
-    return RadioListTile(
-      title: Text(titulo),
-      secondary: FaIcon(icone, color: TemaSite.corPrimaria, size: 20),
-      value: titulo,
-      groupValue: metodoPagamento,
-      activeColor: TemaSite.corPrimaria,
-      onChanged: (value) => setState(() => metodoPagamento = value.toString()),
+      onChanged: (value) {
+        setState(() {
+          metodoEntrega = value.toString();
+          valorFrete = valor;
+        });
+      },
     );
   }
 

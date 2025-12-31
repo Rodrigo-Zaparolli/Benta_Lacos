@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:benta_lacos/shared/sections/carousel/depoimentos/depoimento.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -39,14 +38,11 @@ class _CarrosselDepoimentosState extends State<CarrosselDepoimentos> {
 
   void _startAutoScroll() {
     _timer?.cancel();
-
     if (_total <= 1) return;
 
     _timer = Timer.periodic(const Duration(seconds: 4), (_) {
       if (!_pageController.hasClients) return;
-
       _indiceAtual = (_indiceAtual + 1) % _total;
-
       _pageController.animateToPage(
         _indiceAtual,
         duration: const Duration(milliseconds: 800),
@@ -92,18 +88,24 @@ class _CarrosselDepoimentosState extends State<CarrosselDepoimentos> {
               style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
+
+            // ============================================================
+            // ONDE MUDA A ALTURA (1): O SizedBox abaixo controla a altura
+            // total do carrossel. Se você quer o card menor, diminua este valor.
+            // ============================================================
             SizedBox(
-              height: 320,
+              height: 155, // <--- Altere aqui para diminuir ou aumentar o card
               child: PageView.builder(
                 controller: _pageController,
                 itemCount: depoimentos.length,
                 onPageChanged: (index) {
-                  _indiceAtual = index;
+                  setState(() {
+                    _indiceAtual = index;
+                  });
                   _startAutoScroll();
                 },
                 itemBuilder: (context, index) {
                   final diferenca = (index - _indiceAtual).abs();
-
                   final escala = (1 - diferenca * 0.12).clamp(0.85, 1.0);
                   final opacidade = (1 - diferenca * 0.3).clamp(0.5, 1.0);
 
@@ -133,7 +135,13 @@ class _CarrosselDepoimentosState extends State<CarrosselDepoimentos> {
   Widget _cardDepoimento(Depoimento dep, bool ativo) {
     return Container(
       width: 400,
-      padding: const EdgeInsets.all(20),
+
+      // ============================================================
+      // ONDE MUDA A ALTURA (2): O padding interno também afeta o tamanho
+      // percebido. Quanto menor o vertical, mais "achatado" o card fica.
+      // ============================================================
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+
       margin: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -150,12 +158,13 @@ class _CarrosselDepoimentosState extends State<CarrosselDepoimentos> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const CircleAvatar(
-            backgroundColor: Color(0xFFFFE4E1),
-            radius: 25,
-            child: Icon(Icons.format_quote, color: Colors.pink, size: 30),
+          // Espaçamentos internos (SizedBox) menores ajudam a reduzir a altura
+          CircleAvatar(
+            backgroundColor: const Color(0xFFFFE4E1),
+            radius: 20,
+            child: const Icon(Icons.format_quote, color: Colors.pink, size: 24),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8), // <--- Espaço interno reduzido
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(
@@ -163,24 +172,24 @@ class _CarrosselDepoimentosState extends State<CarrosselDepoimentos> {
               (i) => Icon(
                 i < dep.estrelas ? Icons.star : Icons.star_border,
                 color: Colors.amber,
-                size: 20,
+                size: 18,
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Text(
             '"${dep.texto}"',
             textAlign: TextAlign.center,
-            maxLines: 4,
+            maxLines: 3,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontStyle: FontStyle.italic, fontSize: 15),
+            style: const TextStyle(fontStyle: FontStyle.italic, fontSize: 14),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Text(
             dep.cliente.toUpperCase(),
             style: const TextStyle(
               fontWeight: FontWeight.bold,
-              fontSize: 12,
+              fontSize: 11,
               color: Colors.pink,
               letterSpacing: 1.1,
             ),

@@ -1,5 +1,5 @@
 // lib/produtos/laco.dart
-import 'package:benta_lacos/domain/models/product.dart';
+import 'package:benta_lacos/domain/models/product_model.dart';
 import 'package:benta_lacos/domain/providers/cart_provider.dart';
 import 'package:benta_lacos/shared/sections/carousel/carrossel_veja.dart';
 import 'package:flutter/material.dart';

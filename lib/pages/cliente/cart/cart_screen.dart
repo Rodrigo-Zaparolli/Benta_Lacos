@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_slidable/flutter_slidable.dart'; // Sugestão: adicione no pubspec.yaml
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:benta_lacos/domain/providers/cart_provider.dart';
 import 'package:benta_lacos/shared/theme/tema_site.dart';
-import 'package:benta_lacos/domain/models/product.dart';
+import 'package:benta_lacos/domain/models/product_model.dart';
 import '../checkout/checkout_page.dart';
 
 class CartScreen extends StatelessWidget {
@@ -12,13 +12,12 @@ class CartScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Usamos o watch ou o Provider.of para escutar as mudanças
     final cart = Provider.of<CartProvider>(context);
-    const double valorParaFreteGratis = 150.0; // Exemplo de regra de negócio
+    const double valorParaFreteGratis = 150.0;
 
     return Scaffold(
-      backgroundColor: const Color(
-        0xFFF8F9FA,
-      ), // Fundo levemente cinza para destacar os cards brancos
+      backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -52,7 +51,6 @@ class CartScreen extends StatelessWidget {
       ),
       body: Column(
         children: [
-          // Upgrade 1: Barra de Frete Grátis
           if (cart.items.isNotEmpty)
             _buildBarraFrete(cart.total, valorParaFreteGratis),
 
@@ -67,6 +65,8 @@ class CartScreen extends StatelessWidget {
                     itemCount: cart.items.length,
                     itemBuilder: (context, index) {
                       final item = cart.items[index];
+                      // Proteção: caso o item na lista seja nulo por erro de sincronização
+                      if (item == null) return const SizedBox.shrink();
                       return _buildItemCarrinhoPremium(context, cart, item);
                     },
                   ),
@@ -77,7 +77,6 @@ class CartScreen extends StatelessWidget {
     );
   }
 
-  // Upgrade 2: Barra de Progresso Motivacional
   Widget _buildBarraFrete(double total, double meta) {
     double progresso = (total / meta).clamp(0.0, 1.0);
     double faltante = meta - total;
@@ -175,13 +174,17 @@ class CartScreen extends StatelessWidget {
     );
   }
 
-  // Upgrade 3: Card com Slidable (Arrastar para excluir) e Design Moderno
   Widget _buildItemCarrinhoPremium(
     BuildContext context,
     CartProvider cart,
     dynamic item,
   ) {
     final Product produto = item.product;
+
+    // 🛡️ SOLUÇÃO DA TELA VERMELHA:
+    // Forçamos a comparação explícita com 'true'. Se item.selecionado for null,
+    // a expressão (null == true) resulta em false, evitando o erro de tipo.
+    final bool isSelected = (item.selecionado == true);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -210,18 +213,30 @@ class CartScreen extends StatelessWidget {
           ),
           child: Row(
             children: [
+              Checkbox(
+                activeColor: TemaSite.corPrimaria,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                // Aqui passamos o bool puro já tratado
+                value: isSelected,
+                onChanged: (bool? newValue) {
+                  cart.toggleSelection(produto.id);
+                },
+              ),
+
               ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: SizedBox(
-                  width: 85,
-                  height: 85,
+                  width: 70,
+                  height: 70,
                   child: Hero(
                     tag: 'cart_${produto.id}',
                     child: _gerarImagem(produto),
                   ),
                 ),
               ),
-              const SizedBox(width: 15),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -230,7 +245,7 @@ class CartScreen extends StatelessWidget {
                       produto.name,
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                        fontSize: 15,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -238,10 +253,9 @@ class CartScreen extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       "R\$ ${produto.price.toStringAsFixed(2)}",
-                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                      style: TextStyle(color: Colors.grey[600], fontSize: 13),
                     ),
-                    const SizedBox(height: 10),
-                    // Seletor de Quantidade Moderno
+                    const SizedBox(height: 8),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -258,7 +272,7 @@ class CartScreen extends StatelessWidget {
                               ),
                               Padding(
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
+                                  horizontal: 8,
                                 ),
                                 child: Text(
                                   "${item.quantity}",
@@ -306,12 +320,24 @@ class CartScreen extends StatelessWidget {
 
   Widget _gerarImagem(Product p) {
     if (p.imageUrl != null && p.imageUrl!.isNotEmpty) {
-      return Image.network(p.imageUrl!, fit: BoxFit.cover);
+      return Image.network(
+        p.imageUrl!,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => Container(
+          color: Colors.grey[200],
+          child: const Icon(Icons.broken_image, color: Colors.grey),
+        ),
+      );
     }
     return Container(color: Colors.grey[200], child: const Icon(Icons.image));
   }
 
   Widget _buildResumoPremium(BuildContext context, CartProvider cart) {
+    // 🛡️ Proteção extra no resumo:
+    bool temItensSelecionados = cart.items.any(
+      (item) => item != null && (item.selecionado == true),
+    );
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -333,12 +359,12 @@ class CartScreen extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  "Subtotal",
-                  style: TextStyle(color: Colors.grey, fontSize: 15),
+                  "Subtotal (selecionados)",
+                  style: TextStyle(color: Colors.grey, fontSize: 14),
                 ),
                 Text(
                   "R\$ ${cart.total.toStringAsFixed(2)}",
-                  style: const TextStyle(fontSize: 15),
+                  style: const TextStyle(fontSize: 14),
                 ),
               ],
             ),
@@ -362,27 +388,34 @@ class CartScreen extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: cart.items.isEmpty
+              onPressed: !temItensSelecionados
                   ? null
                   : () => _verificarAutenticacao(context),
               style: ElevatedButton.styleFrom(
                 backgroundColor: TemaSite.corPrimaria,
                 foregroundColor: Colors.white,
+                disabledBackgroundColor: Colors.grey[300],
                 minimumSize: const Size(double.infinity, 55),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
                 elevation: 0,
               ),
-              child: const Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    "FINALIZAR PEDIDO",
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    temItensSelecionados
+                        ? "FINALIZAR COMPRA"
+                        : "SELECIONE UM ITEM",
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
                   ),
-                  SizedBox(width: 10),
-                  Icon(Icons.arrow_forward_rounded, size: 20),
+                  const SizedBox(width: 10),
+                  if (temItensSelecionados)
+                    const Icon(Icons.arrow_forward_rounded, size: 20),
                 ],
               ),
             ),
@@ -405,7 +438,7 @@ class CartScreen extends StatelessWidget {
           ),
           TextButton(
             onPressed: () {
-              cart.clear();
+              cart.clear(); // O clear() do provider deve lidar com o Firebase
               Navigator.pop(ctx);
             },
             child: const Text("LIMPAR", style: TextStyle(color: Colors.red)),
@@ -425,7 +458,6 @@ class CartScreen extends StatelessWidget {
           behavior: SnackBarBehavior.floating,
         ),
       );
-      // Navigator.pushNamed(context, '/login');
     } else {
       Navigator.push(
         context,

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/tema_site.dart';
-import '../../domain/models/product.dart';
+import '../../domain/models/product_model.dart';
 import '../utils/currency_input_formatter.dart';
 
 class ProductForm extends StatefulWidget {

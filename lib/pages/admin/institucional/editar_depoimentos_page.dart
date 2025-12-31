@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../../shared/theme/tema_site.dart'; // Ajustado para sua nova estrutura
+import '../../../../shared/theme/tema_site.dart'; // Ajustado para sua nova estrutura
 
 class GestaoDepoimentosPage extends StatelessWidget {
   const GestaoDepoimentosPage({super.key});
@@ -13,13 +13,13 @@ class GestaoDepoimentosPage extends StatelessWidget {
         backgroundColor: const Color(0xFFF8F9FA),
         appBar: AppBar(
           title: const Text("Gestão de Depoimentos"),
-          backgroundColor: TemaSite.corPrimaria,
+          backgroundColor: TemaAdmin.corAdminEditor,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () => Navigator.pop(context),
           ),
           bottom: const TabBar(
-            indicatorColor: Colors.white,
+            indicatorColor: TemaAdmin.Primary,
             tabs: [
               Tab(icon: Icon(Icons.pending_actions), text: "PENDENTES"),
               Tab(icon: Icon(Icons.check_circle_outline), text: "APROVADOS"),

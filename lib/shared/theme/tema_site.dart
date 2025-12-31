@@ -4,23 +4,34 @@ import 'package:flutter/material.dart';
 // TEMA GLOBAL DO SITE BENTA LAÇOS
 // =============================================================
 class TemaSite {
-  static const String backgroundApp = 'assets/imagens/tela_fundo/dashboard.png';
-
   static const Color corPrimaria = Color(0xFFE91E63); // Rosa Pink
-  static const Color corSecundaria = Color(0xFF795548); // Marrom
-  static const Color corDestaque = Color(0xFF4CAF50); // Verde
-
+  static const Color corSecundaria = Color(0xFF795548); // Marroms
   static const Color corFundoRodape = Color(0xFFF8F4EA); // Bege
   static const Color corTextoRodape = Color(0xFF5D4037); // Marrom Escuro
   static const Color corRastreamento = Color(0xFFE8BFC1); // Rosa pálido
-
-  static const String fontePrincipal = 'Montserrat';
+  static const Color corDestaque = Color(0xFF4CAF50); // Verde
 
   static final ConfigRodape rodape = ConfigRodape();
   static final ConfigProduto produto = ConfigProduto();
-  static final ConfigAdmin admin = ConfigAdmin();
 
+  static const String fontePrincipal = 'Montserrat';
+
+  // =============================================================
+  // TEMA GLOBAL PARA USAR
+  // =============================================================
+
+  static const Color onSecondary = Color.fromARGB(0, 54, 54, 72);
+  static const Color onAdminEditor = Color(0xFFE91E63);
+  static const Color secondaryAdminEditor = Color(0xFFE91E63);
+  static const Color onAdminSalvar = Color(0xFFE91E63);
+  static const Color secondaryAdminSalvar = Color(0xFFE91E63);
+  static const Color onDestaque = Color(0xFFE91E63); // Usar
+  static const Color secondarDestaque = Color(0xFFE91E63); //Usar
+  static const String fonteSecondary = 'Montserrat'; //Usar
+
+  // =============================================================
   // SOLUÇÃO DO ERRO: Criamos um getter chamado 'tema' que o main.dart procura
+  // =============================================================
   static ThemeData get tema => temaClaro;
 
   static final ThemeData temaClaro = ThemeData(
@@ -66,29 +77,37 @@ class TemaSite {
 // 🔥 CONFIGURAÇÃO DO PAINEL ADMINISTRATIVO (DASHBOARD)
 // =============================================================
 class ConfigAdmin {
-  final double fonteTituloAppBar = 22.0;
-  final double fonteSecao = 20.0;
-  final double fonteCardTitulo = 12.0;
-  final double fonteCardValor = 16.0;
+  final String pathBackground = TemaAdmin.backgroundApp;
+}
 
-  final String pathBackground = TemaSite.backgroundApp;
-
-  final double cardAspectRatio = 3;
-  final Color corCardFundo = Colors.white;
-
-  TextStyle styleTituloSecao() => TextStyle(
-    fontSize: fonteSecao,
-    fontWeight: FontWeight.bold,
-    color: const Color(0xFF424242),
-    fontFamily: TemaSite.fontePrincipal,
-  );
-
-  TextStyle styleCardValor() => TextStyle(
-    fontSize: fonteCardValor,
-    fontWeight: FontWeight.bold,
-    color: Colors.black,
-    fontFamily: TemaSite.fontePrincipal,
-  );
+class TemaAdmin {
+  static const String backgroundApp = 'assets/imagens/tela_fundo/dashboard.png';
+  static final ConfigAdmin admin = ConfigAdmin();
+  static const Color corBackgroundAdmin = Color.fromARGB(255, 144, 177, 140);
+  static const Color Primary = Color.fromARGB(255, 255, 255, 255);
+  static const Color onPrimary = Color.fromARGB(255, 28, 10, 34);
+  // CONFIGURAÇÃO DOS CARD (GESTÃO PRODUTOS)
+  static const Color ContainerOne = Color.fromARGB(255, 188, 11, 111);
+  static const Color ContainerTwo = Color.fromARGB(255, 80, 2, 87);
+  static const Color ContainerThree = Color.fromARGB(255, 100, 5, 37);
+  static const Color ContainerFour = Color.fromARGB(255, 67, 160, 71);
+  static const Color ContainerFive = Color.fromARGB(255, 154, 39, 174);
+  static const Color ContainerSix = Color.fromARGB(255, 230, 81, 0);
+  static const Color ContainerSeven = Color.fromARGB(255, 2, 119, 189);
+  static const Color ContainerEight = Color.fromARGB(255, 46, 59, 66);
+  static const Color ContainerNine = Color.fromARGB(255, 3, 97, 61);
+  // CONFIGURAÇÃO DO EDITAR
+  static const Color corAdminEditor = Color.fromARGB(255, 128, 48, 225);
+  static const Color corAdminSalvar = Color.fromARGB(255, 63, 173, 66);
+  static const Color onAdminEditor = Color.fromARGB(255, 54, 100, 200);
+  // GESTÃO DE PEDIDOS
+  static const Color PedidoPago = Color.fromARGB(255, 76, 175, 80);
+  static const Color PedidoEnviado = Color.fromARGB(255, 34, 152, 248);
+  static const Color PedidoCancelado = Color.fromARGB(255, 244, 67, 54);
+  static const Color PedidoPendente = Color.fromARGB(255, 154, 93, 1);
+  static const Color PedidoRS = Color.fromARGB(255, 3, 15, 6);
+  static const Color corBackgroundGestao = Color.fromARGB(255, 206, 221, 204);
+  static const Color corBackgroundCampo = Color.fromARGB(255, 255, 255, 255);
 }
 
 // =============================================================

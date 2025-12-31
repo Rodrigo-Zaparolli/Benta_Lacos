@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/product.dart';
+import '../models/product_model.dart';
 
 class ProductRepository with ChangeNotifier {
   static final ProductRepository _instance = ProductRepository._internal();

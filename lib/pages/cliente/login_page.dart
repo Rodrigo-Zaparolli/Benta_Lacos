@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:validatorless/validatorless.dart';
+import 'package:provider/provider.dart';
 
+// Imports do seu projeto
 import '../../shared/sections/header/cabecalho.dart';
+import '../../shared/sections/footer/rodape.dart'; // 👈 Importando o rodapé
 import '../../shared/widgets/background_fundo.dart';
 import '../../shared/theme/tema_site.dart';
+import '../../domain/providers/cart_provider.dart';
 import 'criar_conta_page.dart';
 import 'reset_senha_page.dart';
 
@@ -18,18 +22,15 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  final _email = TextEditingController();
-  final _senha = TextEditingController();
-
+  final _emailController = TextEditingController();
+  final _senhaController = TextEditingController();
   bool _loading = false;
-
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  bool _obscureSenha = true;
 
   @override
   void dispose() {
-    _email.dispose();
-    _senha.dispose();
+    _emailController.dispose();
+    _senhaController.dispose();
     super.dispose();
   }
 
@@ -39,40 +40,54 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => _loading = true);
 
     try {
-      final userCredential = await _auth.signInWithEmailAndPassword(
-        email: _email.text.trim(),
-        password: _senha.text,
-      );
+      final userCredential = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(
+            email: _emailController.text.trim(),
+            password: _senhaController.text,
+          );
+
+      final uid = userCredential.user?.uid;
+      if (uid == null) return;
 
       if (!mounted) return;
 
-      final doc = await _firestore
+      final cartProvider = Provider.of<CartProvider>(context, listen: false);
+      await cartProvider.sincronizarDoFirestore(uid);
+
+      if (!mounted) return;
+
+      final doc = await FirebaseFirestore.instance
           .collection('usuarios')
-          .doc(userCredential.user!.uid)
+          .doc(uid)
           .get();
-
-      if (!mounted) return;
-
       final tipo = doc.data()?['tipo'] ?? 'cliente';
+      final nome = doc.data()?['nome'] ?? 'Cliente';
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Bem-vindo(a), $nome!'),
+          backgroundColor: Colors.green,
+        ),
+      );
 
       if (tipo == 'admin') {
-        Navigator.pushNamedAndRemoveUntil(context, '/admin', (route) => false);
+        Navigator.pushReplacementNamed(context, '/admin');
       } else {
-        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+        Navigator.pushReplacementNamed(context, '/home');
       }
     } on FirebaseAuthException catch (e) {
-      String msg = 'Erro ao fazer login';
-
-      if (e.code == 'user-not-found' || e.code == 'invalid-credential') {
-        msg = 'Usuário ou senha incorretos';
-      }
+      String erroMsg = 'E-mail ou senha incorretos.';
+      if (e.code == 'user-not-found') erroMsg = 'Usuário não encontrado.';
+      if (e.code == 'wrong-password') erroMsg = 'Senha incorreta.';
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(msg), backgroundColor: Colors.redAccent),
+        SnackBar(content: Text(erroMsg), backgroundColor: Colors.redAccent),
       );
-    } catch (_) {
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ocorreu um erro inesperado')),
+        const SnackBar(
+          content: Text('Erro ao realizar login. Tente novamente.'),
+        ),
       );
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -83,128 +98,148 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: BackgroundFundo(
-        child: Column(
-          children: [
-            const Cabecalho(),
+        child: SingleChildScrollView(
+          // 👈 Alterado para permitir que o rodapé flua naturalmente
+          child: Column(
+            children: [
+              const Cabecalho(),
 
-            Expanded(
-              child: Center(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
+              // Conteúdo do Login
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 60,
+                  horizontal: 24,
+                ),
+                child: Center(
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 500),
+                    constraints: const BoxConstraints(maxWidth: 450),
                     child: Card(
-                      elevation: 6,
+                      elevation: 10,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(20),
                       ),
                       child: Padding(
-                        padding: const EdgeInsets.all(20),
+                        padding: const EdgeInsets.all(32),
                         child: Form(
                           key: _formKey,
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                'Login',
+                                'Bem-vindo de volta!',
                                 style: TextStyle(
-                                  fontSize: 25,
+                                  fontSize: 26,
                                   fontWeight: FontWeight.bold,
                                   color: TemaSite.corSecundaria,
-                                  fontFamily: TemaSite.fontePrincipal,
                                 ),
                               ),
-
-                              const SizedBox(height: 20),
+                              const SizedBox(height: 8),
+                              const Text(
+                                'Acesse à sua conta para continuar',
+                                style: TextStyle(color: Colors.grey),
+                              ),
+                              const SizedBox(height: 32),
 
                               TextFormField(
-                                controller: _email,
-                                decoration: const InputDecoration(
+                                controller: _emailController,
+                                decoration: InputDecoration(
                                   labelText: 'E-mail',
-                                  border: OutlineInputBorder(),
-                                  prefixIcon: Icon(Icons.email_outlined),
+                                  prefixIcon: const Icon(Icons.email_outlined),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
                                 ),
                                 validator: Validatorless.multiple([
-                                  Validatorless.required('Obrigatório'),
+                                  Validatorless.required('Campo obrigatório'),
                                   Validatorless.email('E-mail inválido'),
                                 ]),
                               ),
-
-                              const SizedBox(height: 12),
+                              const SizedBox(height: 20),
 
                               TextFormField(
-                                controller: _senha,
-                                obscureText: true,
-                                decoration: const InputDecoration(
+                                controller: _senhaController,
+                                obscureText: _obscureSenha,
+                                decoration: InputDecoration(
                                   labelText: 'Senha',
-                                  border: OutlineInputBorder(),
-                                  prefixIcon: Icon(Icons.lock_outline),
+                                  prefixIcon: const Icon(Icons.lock_outline),
+                                  suffixIcon: IconButton(
+                                    icon: Icon(
+                                      _obscureSenha
+                                          ? Icons.visibility_off
+                                          : Icons.visibility,
+                                    ),
+                                    onPressed: () => setState(
+                                      () => _obscureSenha = !_obscureSenha,
+                                    ),
+                                  ),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
                                 ),
                                 validator: Validatorless.required(
-                                  'Obrigatório',
+                                  'Campo obrigatório',
                                 ),
                                 onFieldSubmitted: (_) => _login(),
                               ),
 
-                              const SizedBox(height: 20),
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: TextButton(
+                                  onPressed: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const ResetSenhaPage(),
+                                    ),
+                                  ),
+                                  child: const Text('Esqueceu a senha?'),
+                                ),
+                              ),
+                              const SizedBox(height: 24),
 
                               _loading
-                                  ? const CircularProgressIndicator(
-                                      color: TemaSite.corPrimaria,
-                                    )
+                                  ? const CircularProgressIndicator()
                                   : SizedBox(
                                       width: double.infinity,
-                                      height: 50,
+                                      height: 55,
                                       child: ElevatedButton(
                                         onPressed: _login,
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: TemaSite.corPrimaria,
                                           shape: RoundedRectangleBorder(
                                             borderRadius: BorderRadius.circular(
-                                              8,
+                                              12,
                                             ),
                                           ),
                                         ),
                                         child: const Text(
                                           'ENTRAR',
                                           style: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
                                             fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
                                           ),
                                         ),
                                       ),
                                     ),
-
-                              const SizedBox(height: 12),
+                              const SizedBox(height: 20),
 
                               Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
+                                  const Text('Ainda não tem conta?'),
                                   TextButton(
-                                    onPressed: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) =>
-                                              const CriarContaPage(),
-                                        ),
-                                      );
-                                    },
-                                    child: const Text('Criar nova conta'),
-                                  ),
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) =>
-                                              const ResetSenhaPage(),
-                                        ),
-                                      );
-                                    },
-                                    child: const Text('Esqueci a senha'),
+                                    onPressed: () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => const CriarContaPage(),
+                                      ),
+                                    ),
+                                    child: const Text(
+                                      'Crie uma agora',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),
@@ -216,8 +251,10 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
               ),
-            ),
-          ],
+
+              const Rodape(), // 👈 Adicionado aqui no final da coluna
+            ],
+          ),
         ),
       ),
     );
