@@ -22,6 +22,7 @@ class MeusPedidosPage extends StatelessWidget {
           child: Column(
             children: [
               const Cabecalho(),
+
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 20,
@@ -41,10 +42,11 @@ class MeusPedidosPage extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 20),
+
                       if (user == null)
                         const Center(
                           child: Text(
-                            "Você precisa estar logado para ver seus pedidos.",
+                            'Você precisa estar logado para ver seus pedidos.',
                           ),
                         )
                       else
@@ -56,21 +58,9 @@ class MeusPedidosPage extends StatelessWidget {
                               .snapshots(),
                           builder: (context, snapshot) {
                             if (snapshot.hasError) {
-                              debugPrint("ERRO FIRESTORE: ${snapshot.error}");
-                              if (snapshot.error.toString().contains(
-                                'failed-precondition',
-                              )) {
-                                return const Center(
-                                  child: Text(
-                                    "Configurando o banco de dados... Por favor, aguarde 2 minutos e atualize a página.",
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(color: Colors.orange),
-                                  ),
-                                );
-                              }
                               return Center(
                                 child: Text(
-                                  "Erro ao carregar: ${snapshot.error}",
+                                  'Erro ao carregar pedidos: ${snapshot.error}',
                                 ),
                               );
                             }
@@ -82,7 +72,7 @@ class MeusPedidosPage extends StatelessWidget {
                               );
                             }
 
-                            final pedidos = snapshot.data!.docs;
+                            final pedidos = snapshot.data?.docs ?? [];
 
                             if (pedidos.isEmpty) {
                               return _buildEmptyState();
@@ -95,13 +85,13 @@ class MeusPedidosPage extends StatelessWidget {
                               separatorBuilder: (_, __) =>
                                   const SizedBox(height: 15),
                               itemBuilder: (context, index) {
+                                final doc = pedidos[index];
                                 final pedido =
-                                    pedidos[index].data()
-                                        as Map<String, dynamic>;
-                                final pedidoId = pedidos[index].id;
+                                    doc.data() as Map<String, dynamic>;
+
                                 return _OrderCard(
+                                  pedidoId: doc.id,
                                   pedido: pedido,
-                                  pedidoId: pedidoId,
                                 );
                               },
                             );
@@ -111,6 +101,7 @@ class MeusPedidosPage extends StatelessWidget {
                   ),
                 ),
               ),
+
               const Rodape(),
             ],
           ),
@@ -124,15 +115,15 @@ class MeusPedidosPage extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(40),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.8),
-        borderRadius: BorderRadius.circular(15),
+        color: Colors.white.withOpacity(0.85),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         children: [
           Icon(Icons.shopping_bag_outlined, size: 80, color: Colors.grey[300]),
           const SizedBox(height: 20),
           const Text(
-            "Você ainda não realizou nenhum pedido.",
+            'Você ainda não realizou nenhum pedido.',
             style: TextStyle(fontSize: 18, color: Colors.grey),
           ),
         ],
@@ -141,31 +132,43 @@ class MeusPedidosPage extends StatelessWidget {
   }
 }
 
+/// =======================================================
+/// CARD DO PEDIDO
+/// =======================================================
 class _OrderCard extends StatelessWidget {
-  final Map<String, dynamic> pedido;
   final String pedidoId;
+  final Map<String, dynamic> pedido;
 
-  const _OrderCard({required this.pedido, required this.pedidoId});
+  const _OrderCard({required this.pedidoId, required this.pedido});
 
-  // CORREÇÃO: Passando a lista de mapas diretamente para o serviço
-  void _gerarPdfHistorico() async {
-    // Garantimos que estamos enviando os dados exatamente como o Firestore salvou
-    final List itensDoBanco = pedido['itens'] as List? ?? [];
+  /// 🔒 Resolve data de forma segura (TELA + PDF)
+  DateTime _resolverDataPedido() {
+    final raw = pedido['dataPedido'];
+
+    if (raw is Timestamp) return raw.toDate();
+    if (raw is DateTime) return raw;
+    if (raw is String) return DateTime.tryParse(raw) ?? DateTime.now();
+
+    return DateTime.now();
+  }
+
+  /// 📄 Gera PDF
+  Future<void> _gerarPdf() async {
+    final DateTime dataPedido = _resolverDataPedido();
 
     await PdfServiceCliente.gerarComprovantePedido(
       pedidoId: pedidoId,
       nomeCliente: pedido['nomeCliente'] ?? 'Cliente',
-      itens:
-          itensDoBanco, // Agora passamos a lista do banco que contém 'imageUrl'
-      total: (pedido['total'] as num).toDouble(),
-      frete: (pedido['valorFrete'] as num? ?? 0.0).toDouble(),
+      itens: pedido['itens'] as List? ?? [],
+      total: (pedido['total'] as num? ?? 0).toDouble(),
+      frete: (pedido['frete'] as num? ?? 0).toDouble(),
       metodoPagamento: pedido['metodoPagamento'] ?? 'Não informado',
-      enderecoCompleto:
-          pedido['enderecoExibicao'] ?? "Consulte o WhatsApp para detalhes",
+      enderecoCompleto: pedido['enderecoExibicao'] ?? 'Endereço não informado',
+      dataPedido: Timestamp.fromDate(dataPedido), // 🔥 GARANTIDO
     );
   }
 
-  Color _getStatusColor(String status) {
+  Color _statusColor(String status) {
     switch (status.toLowerCase()) {
       case 'entregue':
         return Colors.green;
@@ -180,28 +183,28 @@ class _OrderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    DateTime data = pedido['dataPedido'] is Timestamp
-        ? (pedido['dataPedido'] as Timestamp).toDate()
-        : DateTime.now();
+    final DateTime dataPedido = _resolverDataPedido();
+    final String dataFormatada = DateFormat(
+      'dd/MM/yyyy HH:mm',
+    ).format(dataPedido);
 
-    final String dataFormatada = DateFormat('dd/MM/yyyy HH:mm').format(data);
     final String status = pedido['status'] ?? 'Pendente';
-    final double total = (pedido['total'] ?? 0.0).toDouble();
-    final Color statusColor = _getStatusColor(status);
+    final double total = (pedido['total'] as num? ?? 0).toDouble();
+    final Color statusColor = _statusColor(status);
 
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ExpansionTile(
         leading: Icon(Icons.shopping_basket, color: statusColor),
-        title: Text("Pedido #${pedidoId.substring(0, 8).toUpperCase()}"),
-        subtitle: Text("Data: $dataFormatada"),
+        title: Text('Pedido #${pedidoId.substring(0, 8).toUpperCase()}'),
+        subtitle: Text('Data: $dataFormatada'),
         trailing: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
-              "R\$ ${total.toStringAsFixed(2)}",
+              'R\$ ${total.toStringAsFixed(2)}',
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 color: Colors.brown,
@@ -219,8 +222,9 @@ class _OrderCard extends StatelessWidget {
         ),
         children: [
           const Divider(),
+
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -228,13 +232,13 @@ class _OrderCard extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
-                      "Itens:",
+                      'Itens:',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     ElevatedButton.icon(
-                      onPressed: _gerarPdfHistorico,
+                      onPressed: _gerarPdf,
                       icon: const Icon(Icons.picture_as_pdf, size: 18),
-                      label: const Text("PDF"),
+                      label: const Text('PDF'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
                         foregroundColor: TemaSite.corPrimaria,
@@ -246,12 +250,19 @@ class _OrderCard extends StatelessWidget {
                     ),
                   ],
                 ),
+
                 const SizedBox(height: 10),
+
                 ...(pedido['itens'] as List? ?? []).map((item) {
+                  final double totalItem =
+                      ((item['preco'] ?? 0) * (item['quantidade'] ?? 1))
+                          .toDouble();
+
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 2),
                     child: Text(
-                      "${item['quantidade']}x ${item['nome']} - R\$ ${(item['preco'] * item['quantidade']).toStringAsFixed(2)}",
+                      '${item['quantidade']}x ${item['nome']} - '
+                      'R\$ ${totalItem.toStringAsFixed(2)}',
                       style: const TextStyle(fontSize: 13),
                     ),
                   );

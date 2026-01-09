@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../shared/theme/tema_site.dart';
 
-class EditarHistoriaPage extends StatefulWidget {
-  const EditarHistoriaPage({super.key});
+class EditarOQueFacoPage extends StatefulWidget {
+  const EditarOQueFacoPage({super.key});
 
   @override
-  State<EditarHistoriaPage> createState() => _EditarHistoriaPageState();
+  State<EditarOQueFacoPage> createState() => _EditarOQueFacoPageState();
 }
 
-class _EditarHistoriaPageState extends State<EditarHistoriaPage> {
+class _EditarOQueFacoPageState extends State<EditarOQueFacoPage> {
   final _tituloController = TextEditingController();
   final _conteudoController = TextEditingController();
   final _urlImagemController = TextEditingController();
@@ -35,20 +35,18 @@ class _EditarHistoriaPageState extends State<EditarHistoriaPage> {
     try {
       var doc = await FirebaseFirestore.instance
           .collection('institucional')
-          .doc('nossa_historia')
+          .doc('oque_faco')
           .get();
 
-      if (doc.exists && doc.data() != null) {
-        var data = doc.data()!;
-        // 🟢 Correção: Garantindo que os dados sejam lidos corretamente
-        _tituloController.text = data['titulo']?.toString() ?? '';
-        _conteudoController.text = data['conteudo']?.toString() ?? '';
-        _urlImagemController.text = data['urlImagem']?.toString() ?? '';
-        _larguraImagemController.text = (data['larguraImagem'] ?? '350')
+      if (doc.exists) {
+        _tituloController.text = doc['titulo'] ?? '';
+        _conteudoController.text = doc['conteudo'] ?? '';
+        _urlImagemController.text = doc['urlImagem'] ?? '';
+        _larguraImagemController.text = (doc['larguraImagem'] ?? '350')
             .toString();
       }
     } catch (e) {
-      debugPrint("Erro ao carregar história: $e");
+      debugPrint("Erro ao carregar dados: $e");
     } finally {
       if (mounted) setState(() => _carregando = false);
     }
@@ -59,7 +57,7 @@ class _EditarHistoriaPageState extends State<EditarHistoriaPage> {
     try {
       await FirebaseFirestore.instance
           .collection('institucional')
-          .doc('nossa_historia')
+          .doc('oque_faco')
           .set({
             'titulo': _tituloController.text,
             'conteudo': _conteudoController.text,
@@ -72,7 +70,7 @@ class _EditarHistoriaPageState extends State<EditarHistoriaPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text("História atualizada com sucesso!"),
+            content: Text("Conteúdo 'O Que Faço' atualizado com sucesso!"),
             backgroundColor: Colors.green,
           ),
         );
@@ -100,84 +98,49 @@ class _EditarHistoriaPageState extends State<EditarHistoriaPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Ajustar Nossa História"),
+        title: const Text("Ajustar O Que Faço"),
         backgroundColor: TemaAdmin.corAdminEditor,
         foregroundColor: TemaAdmin.Primary,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 20.0,
-          vertical: 10.0,
-        ), // 🟢 Reduzido espaço superior
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           children: [
-            // Campo de Título Centralizado
             TextField(
               controller: _tituloController,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
               decoration: const InputDecoration(
-                hintText: "Título da Página",
-                border: InputBorder.none, // 🟢 Estilo limpo
-              ),
-            ),
-
-            // 🟢 LINHA QUE OCUPA 90% DA LARGURA (Conforme sua solicitação)
-            Center(
-              child: Container(
-                margin: const EdgeInsets.symmetric(vertical: 10),
-                width: MediaQuery.of(context).size.width * 0.9,
-                height: 2,
-                color: Colors.brown.withOpacity(
-                  0.5,
-                ), // Cor elegante combinando com o tema
-              ),
-            ),
-
-            // URL e Largura Lado a Lado para economizar espaço
-            Row(
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: TextField(
-                    controller: _urlImagemController,
-                    decoration: const InputDecoration(
-                      labelText: "URL da Imagem",
-                      border: OutlineInputBorder(),
-                      isDense: true, // 🟢 Campo mais compacto
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  flex: 1,
-                  child: TextField(
-                    controller: _larguraImagemController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: "Largura",
-                      border: OutlineInputBorder(),
-                      isDense: true,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 15), // 🟢 Espaço reduzido
-            // Campo de Conteúdo (Agora carregando os dados corretamente)
-            TextField(
-              controller: _conteudoController,
-              maxLines: 15,
-              decoration: const InputDecoration(
-                labelText: "Texto da História",
-                alignLabelWithHint: true,
+                labelText: "Título da Página",
                 border: OutlineInputBorder(),
               ),
             ),
-
-            const SizedBox(height: 20),
-
+            const SizedBox(height: 15),
+            TextField(
+              controller: _urlImagemController,
+              decoration: const InputDecoration(
+                labelText: "URL da Imagem",
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 15),
+            TextField(
+              controller: _larguraImagemController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: "Largura da Imagem (Ex: 350)",
+                helperText: "Valor em pixels para telas de computador",
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 15),
+            TextField(
+              controller: _conteudoController,
+              maxLines: 12,
+              decoration: const InputDecoration(
+                labelText: "Descrição do que você faz",
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 25),
             ElevatedButton.icon(
               onPressed: _salvar,
               icon: const Icon(Icons.save, color: TemaAdmin.Primary),
@@ -190,7 +153,7 @@ class _EditarHistoriaPageState extends State<EditarHistoriaPage> {
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: TemaAdmin.corAdminSalvar,
-                minimumSize: const Size(double.infinity, 50),
+                minimumSize: const Size(double.infinity, 55),
               ),
             ),
           ],

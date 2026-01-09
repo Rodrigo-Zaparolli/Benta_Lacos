@@ -1,16 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+// --- IMPORTS DO SISTEMA ---
+import 'package:benta_lacos/core/pdf/estoque_pdf.dart'; // Import da classe que ajustamos
+import '../estoque_report_page.dart';
+
 class CardsCategorias extends StatelessWidget {
-  final List<QueryDocumentSnapshot> docs; // Lista de Pedidos (vendas)
+  final List<QueryDocumentSnapshot> docs; // Lista de Pedidos (Vendas)
+
   const CardsCategorias({super.key, required this.docs});
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
+      // Monitora a coleção de produtos para cálculos de estoque em tempo real
       stream: FirebaseFirestore.instance.collection('produtos').snapshots(),
       builder: (context, snapshotProdutos) {
-        // Mapa de dados inicializando categorias conforme o padrão da Benta Laços
+        // Mapa base para organizar os dados por categoria
         Map<String, Map<String, dynamic>> dados = {
           "Laços": {"v": 0, "e": 0, "total": 0.0},
           "Tiaras": {"v": 0, "e": 0, "total": 0.0},
@@ -19,23 +25,15 @@ class CardsCategorias extends StatelessWidget {
           "Faixas": {"v": 0, "e": 0, "total": 0.0},
         };
 
-        // --- 1. PROCESSAR VENDAS (CONTABILIZAR ITENS VENDIDOS) ---
+        // --- 1. PROCESSAMENTO DE VENDAS (Baseado nos docs recebidos) ---
         for (var doc in docs) {
           final data = doc.data() as Map<String, dynamic>;
-
-          // Verifica se existe a lista de itens no pedido
           if (data['itens'] != null && data['itens'] is List) {
             List itens = data['itens'];
-
             for (var item in itens) {
-              // BUSCA A CATEGORIA: Tenta 'category' ou 'categoria' (comum em PT-BR)
               String cat = (item['category'] ?? item['categoria'] ?? "")
                   .toString();
-
-              // Se a categoria do item vendido estiver no nosso mapa, incrementa a quantidade vendida ('v')
               if (dados.containsKey(cat)) {
-                // Aqui somamos a quantidade vendida desse item específico no pedido
-                // Se o campo 'quantidade' não existir no item, assume 1
                 int qtdVendida = (item['quantity'] ?? item['quantidade'] ?? 1)
                     .toInt();
                 dados[cat]!['v'] += qtdVendida;
@@ -44,18 +42,14 @@ class CardsCategorias extends StatelessWidget {
           }
         }
 
-        // --- 2. PROCESSAR ESTOQUE (DADOS DOS PRODUTOS CADASTRADOS) ---
+        // --- 2. PROCESSAMENTO DE ESTOQUE (Baseado no Firestore) ---
         if (snapshotProdutos.hasData) {
           for (var prodDoc in snapshotProdutos.data!.docs) {
             final p = prodDoc.data() as Map<String, dynamic>;
             String cat = (p['category'] ?? p['categoria'] ?? "").toString();
-
             if (dados.containsKey(cat)) {
-              // 'quantity' é a quantidade atual em estoque
-              // 'price' é o preço unitário do produto
               num qtdEstoque = p['quantity'] ?? p['quantidade'] ?? 0;
               num preco = p['price'] ?? p['preco'] ?? 0;
-
               dados[cat]!['e'] += qtdEstoque.toInt();
               dados[cat]!['total'] +=
                   (preco.toDouble() * qtdEstoque.toDouble());
@@ -63,55 +57,36 @@ class CardsCategorias extends StatelessWidget {
           }
         }
 
+        // --- 3. INTERFACE SCROLLÁVEL ---
         return SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
-            children: [
-              _buildCard(
-                "Laços",
-                Icons.card_giftcard,
-                Colors.pinkAccent,
-                dados["Laços"]!,
-              ),
-              _buildCard(
-                "Tiaras",
-                Icons.face,
-                Colors.deepPurpleAccent,
-                dados["Tiaras"]!,
-              ),
-              _buildCard(
-                "Kits",
-                Icons.layers,
-                Colors.lightBlue,
-                dados["Kits"]!,
-              ),
-              _buildCard(
-                "Presilhas",
-                Icons.cut,
-                Colors.orange,
-                dados["Presilhas"]!,
-              ),
-              _buildCard(
-                "Faixas",
-                Icons.linear_scale,
-                Colors.green,
-                dados["Faixas"]!,
-              ),
-            ],
+            children: dados.keys.map((cat) {
+              return _buildCard(
+                context,
+                cat,
+                _getIcon(cat),
+                _getColor(cat),
+                dados[cat]!,
+                snapshotProdutos, // Passamos o snapshot para o card usar no PDF
+              );
+            }).toList(),
           ),
         );
       },
     );
   }
 
+  // --- CONSTRUTOR DOS CARDS INDIVIDUAIS ---
   Widget _buildCard(
+    BuildContext context,
     String titulo,
     IconData icone,
     Color cor,
     Map<String, dynamic> info,
+    AsyncSnapshot<QuerySnapshot> snapshotProdutos,
   ) {
-    // Cálculo do preço médio do que está em estoque
     double precoMedio = info['e'] > 0 ? info['total'] / info['e'] : 0.0;
 
     return Container(
@@ -133,20 +108,67 @@ class CardsCategorias extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(icone, color: cor, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                titulo,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
+              Row(
+                children: [
+                  Icon(icone, color: cor, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    titulo,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  _miniButton(
+                    icon: Icons.analytics_outlined,
+                    color: cor,
+                    tooltip: "Ver Detalhes",
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => EstoqueReportPage(
+                            categoria: titulo,
+                            pedidos: docs,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(width: 4),
+                  // BOTÃO PDF: LINKADO COM A CLASSE ESTOQUE_PDF
+                  _miniButton(
+                    icon: Icons.picture_as_pdf_rounded,
+                    color: cor,
+                    tooltip: "Gerar PDF de Estoque",
+                    onPressed: () {
+                      if (snapshotProdutos.hasData) {
+                        // Chama o PDF passando a lista bruta de produtos do Firestore
+                        // A filtragem por categoria é feita dentro da classe EstoquePdf
+                        EstoquePdf.gerar(snapshotProdutos.data!.docs, titulo);
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              "Aguardando carregamento dos dados...",
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                ],
               ),
             ],
           ),
           const SizedBox(height: 15),
-          // --- LINHA DE VENDIDOS (Onde estava o problema) ---
+          // Informação de Vendas
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -169,7 +191,7 @@ class CardsCategorias extends StatelessWidget {
             child: Divider(color: Colors.black12, thickness: 1),
           ),
           const Text(
-            "ESTOQUE",
+            "ESTOQUE ATUAL",
             style: TextStyle(
               color: Colors.grey,
               fontWeight: FontWeight.bold,
@@ -190,6 +212,55 @@ class CardsCategorias extends StatelessWidget {
             bold: true,
           ),
         ],
+      ),
+    );
+  }
+
+  // Helpers para ícones e cores para manter o código limpo
+  IconData _getIcon(String cat) {
+    switch (cat) {
+      case "Tiaras":
+        return Icons.face;
+      case "Kits":
+        return Icons.layers;
+      case "Presilhas":
+        return Icons.cut;
+      case "Faixas":
+        return Icons.linear_scale;
+      default:
+        return Icons.card_giftcard;
+    }
+  }
+
+  Color _getColor(String cat) {
+    switch (cat) {
+      case "Tiaras":
+        return Colors.deepPurpleAccent;
+      case "Kits":
+        return Colors.lightBlue;
+      case "Presilhas":
+        return Colors.orange;
+      case "Faixas":
+        return Colors.green;
+      default:
+        return Colors.pinkAccent;
+    }
+  }
+
+  Widget _miniButton({
+    required IconData icon,
+    required Color color,
+    required String tooltip,
+    required VoidCallback onPressed,
+  }) {
+    return SizedBox(
+      height: 28,
+      width: 28,
+      child: IconButton(
+        tooltip: tooltip,
+        padding: EdgeInsets.zero,
+        icon: Icon(icon, size: 18, color: color.withOpacity(0.6)),
+        onPressed: onPressed,
       ),
     );
   }

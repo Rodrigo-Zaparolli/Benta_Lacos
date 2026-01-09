@@ -1,4 +1,6 @@
+import 'package:benta_lacos/pages/admin/institucional/editar_oque_faco_page.dart';
 import 'package:benta_lacos/pages/admin/institucional/editar_politica_page.dart';
+import 'package:benta_lacos/pages/admin/institucional/editar_quem_sou_page.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -146,7 +148,7 @@ class _AdminPageState extends State<AdminPage> {
                     builder: (context, constraints) {
                       // Define quantos botões por linha baseado na largura
                       int itensPorLinha = constraints.maxWidth > 1000
-                          ? 9
+                          ? 11
                           : (constraints.maxWidth > 600 ? 3 : 2);
                       double espacamento = 4.0; // Espaço bem pequeno entre eles
                       double larguraBotao =
@@ -190,6 +192,25 @@ class _AdminPageState extends State<AdminPage> {
                             const EditarHistoriaPage(),
                             larguraBotao,
                           ),
+
+                          _buildWideActionButton(
+                            context,
+                            "Quem Sou",
+                            Icons.book,
+                            TemaAdmin.ContainerTen,
+                            const EditarQuemSouPage(),
+                            larguraBotao,
+                          ),
+
+                          _buildWideActionButton(
+                            context,
+                            "Oque Faço",
+                            Icons.book,
+                            TemaAdmin.ContainerEleven,
+                            const EditarOQueFacoPage(),
+                            larguraBotao,
+                          ),
+
                           _buildWideActionButton(
                             context,
                             "Contatos",

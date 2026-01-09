@@ -1,8 +1,38 @@
+import 'package:benta_lacos/core/pdf/clientes_pdf.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UltimosClientes extends StatelessWidget {
   const UltimosClientes({super.key});
+
+  /// Função para gerar o PDF de todos os clientes
+  Future<void> _exportarTodosClientes(BuildContext context) async {
+    try {
+      // Busca a base completa sem o limite de 12 itens do widget
+      final queryAll = await FirebaseFirestore.instance
+          .collection('usuarios')
+          .orderBy('dataCriacao', descending: true)
+          .get();
+
+      if (queryAll.docs.isNotEmpty) {
+        await ClientesPdf.gerar(queryAll.docs);
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Nenhum cliente encontrado para exportar."),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Erro ao gerar PDF: $e")));
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -10,11 +40,13 @@ class UltimosClientes extends StatelessWidget {
 
     return _buildBox(
       titulo: "Últimos Clientes Cadastrados",
+      // Adiciona o ícone de PDF no topo do card
+      onPdfPressed: () => _exportarTodosClientes(context),
       child: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('usuarios')
             .orderBy('dataCriacao', descending: true)
-            .limit(12) // Limitado a exatamente 12 clientes
+            .limit(12)
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
@@ -26,7 +58,7 @@ class UltimosClientes extends StatelessWidget {
             );
           }
 
-          if (!snapshot.hasData) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
 
@@ -37,12 +69,10 @@ class UltimosClientes extends StatelessWidget {
           }
 
           return GridView.builder(
-            // physics: const NeverScrollableScrollPhysics(), // Opcional: desativa o scroll se couber exato
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: colunas,
               crossAxisSpacing: 0,
-              mainAxisExtent:
-                  100, // Aumentado para comportar Nome + Endereço + Cidade + Telefone
+              mainAxisExtent: 100, // Altura para comportar todos os textos
             ),
             itemCount: clientes.length,
             itemBuilder: (context, index) {
@@ -72,7 +102,7 @@ class UltimosClientes extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    // Avatar
+                    // Avatar estilizado
                     Container(
                       width: 40,
                       height: 40,
@@ -87,7 +117,7 @@ class UltimosClientes extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    // Informações
+                    // Informações Detalhadas
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -99,7 +129,7 @@ class UltimosClientes extends StatelessWidget {
                                 : nomeCompleto,
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
-                              fontSize: 12,
+                              fontSize: 11,
                               color: Color(0xFF2D3E50),
                             ),
                             overflow: TextOverflow.ellipsis,
@@ -144,24 +174,30 @@ class UltimosClientes extends StatelessWidget {
     );
   }
 
-  Widget _buildBox({required String titulo, required Widget child}) =>
-      Container(
-        height:
-            420, // Altura ajustada para caber as 3 linhas de 100px + cabeçalho
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+  /// Estrutura do Card (Box) com suporte ao ícone de PDF
+  Widget _buildBox({
+    required String titulo,
+    required Widget child,
+    VoidCallback? onPdfPressed,
+  }) => Container(
+    height: 420,
+    padding: const EdgeInsets.all(20),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.05),
+          blurRadius: 10,
+          offset: const Offset(0, 4),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      ],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
               titulo,
@@ -171,10 +207,23 @@ class UltimosClientes extends StatelessWidget {
                 color: Color(0xFF2D3E50),
               ),
             ),
-            const SizedBox(height: 10),
-            const Divider(color: Colors.black12),
-            Expanded(child: child),
+            if (onPdfPressed != null)
+              IconButton(
+                onPressed: onPdfPressed,
+                icon: const Icon(
+                  Icons.picture_as_pdf,
+                  color: Colors.pinkAccent, // Cor para destacar o PDF
+                  size: 22,
+                ),
+                tooltip: "Gerar Relatório Geral",
+                splashRadius: 20,
+              ),
           ],
         ),
-      );
+        const SizedBox(height: 10),
+        const Divider(color: Colors.black12),
+        Expanded(child: child),
+      ],
+    ),
+  );
 }

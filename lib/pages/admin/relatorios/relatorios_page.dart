@@ -1,11 +1,15 @@
+import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+// --- NOVOS IMPORTS DE ACORDO COM A ESTRUTURA CORE/PDF ---
+import 'package:benta_lacos/core/pdf/vendas_pdf.dart'; // Import do novo local
+
+// --- OUTROS IMPORTS DAS PÁGINAS ---
 import 'package:benta_lacos/pages/admin/relatorios/widgets/card_metricas_clientes.dart';
 import 'package:benta_lacos/pages/admin/relatorios/widgets/card_ultimos_clientes.dart';
 import 'package:benta_lacos/pages/admin/relatorios/widgets/card_produtos.dart';
 import 'package:benta_lacos/pages/admin/relatorios/widgets/card_visualizados.dart';
-import 'package:benta_lacos/pages/admin/relatorios/widgets/services/pdf_service.dart';
 import 'package:benta_lacos/shared/theme/tema_site.dart';
-import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'widgets/sidebar_filtros.dart';
 import 'widgets/card_resumo.dart';
@@ -54,6 +58,7 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
 
               return Row(
                 children: [
+                  // --- SIDEBAR ATUALIZADA ---
                   SidebarFiltros(
                     docs: pedidosDocs,
                     onFiltrar: (inicio, fim) {
@@ -62,13 +67,16 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
                         dataFim = fim;
                       });
                     },
-                    onExportarPDF: () =>
-                        PdfService.gerarRelatorioPedidos(pedidosDocs),
+                    onExportarPDF: (mes, ano) {
+                      // CHAMADA ATUALIZADA PARA A NOVA CLASSE VendasPdf
+                      VendasPdf.gerar(pedidosDocs, mes: mes, ano: ano);
+                    },
                   ),
                   Expanded(
                     child: SingleChildScrollView(
                       padding: EdgeInsets.all(config.paddingPagina),
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             "Dashboard - Benta Laços",
@@ -88,7 +96,7 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
                           CardsCategorias(docs: pedidosDocs),
                           const SizedBox(height: 25),
 
-                          // --- SEÇÃO DE GRÁFICOS MODULARIZADOS ---
+                          // --- SEÇÃO DE GRÁFICOS ---
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -111,25 +119,20 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
 
                           const SizedBox(height: 25),
 
-                          // --- NOVA SEÇÃO: MÉTRICAS (DIVIDIDA EM 3 PARTES) ---
+                          // --- SEÇÃO: MÉTRICAS ---
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // 1/3: Rankings de Vendas (Mais e Menos)
                               Expanded(
-                                flex: 2, // Ajustado para proporção igual
+                                flex: 2,
                                 child: CardProdutos(docs: pedidosDocs),
                               ),
                               const SizedBox(width: 15),
-
-                              // 1/3: Mais Visualizados (Firebase)
                               const Expanded(
                                 flex: 2,
                                 child: CardVisualizados(altura: 300),
                               ),
                               const SizedBox(width: 15),
-
-                              // 1/3: Métricas de Clientes e Últimas Compras
                               Expanded(
                                 flex: 2,
                                 child: CardMetricasClientes(docs: pedidosDocs),
@@ -139,16 +142,11 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
 
                           const SizedBox(height: 25),
 
-                          // ---  ÚLTIMOS CLIENTES (4 COLUNAS) ---
-                          Row(
+                          // --- ÚLTIMOS CLIENTES ---
+                          const Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Lista de Clientes em Grid (Ocupa 3 partes)
-                              const Expanded(
-                                flex: 3,
-                                child:
-                                    UltimosClientes(), // Aqui não passamos 'docs' mais
-                              ),
+                              Expanded(flex: 3, child: UltimosClientes()),
                             ],
                           ),
                         ],

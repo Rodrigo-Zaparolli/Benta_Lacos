@@ -96,6 +96,13 @@ class TemaAdmin {
   static const Color ContainerSeven = Color.fromARGB(255, 2, 119, 189);
   static const Color ContainerEight = Color.fromARGB(255, 46, 59, 66);
   static const Color ContainerNine = Color.fromARGB(255, 3, 97, 61);
+  static const Color ContainerTen = Color.fromARGB(255, 94, 192, 14);
+  static const Color ContainerEleven = Color.fromARGB(255, 163, 220, 5);
+  static const Color ContainerTwelve = Color.fromARGB(255, 3, 97, 61); //Usar 12
+  static const Color ContainerThirteen = Color.fromARGB(255, 3, 97, 61); //
+  static const Color ContainerFourteen = Color.fromARGB(255, 3, 97, 61); //
+  static const Color ContainerFifteen = Color.fromARGB(255, 3, 97, 61); //
+
   // CONFIGURAÇÃO DO EDITAR
   static const Color corAdminEditor = Color.fromARGB(255, 128, 48, 225);
   static const Color corAdminSalvar = Color.fromARGB(255, 63, 173, 66);
@@ -108,6 +115,22 @@ class TemaAdmin {
   static const Color PedidoRS = Color.fromARGB(255, 3, 15, 6);
   static const Color corBackgroundGestao = Color.fromARGB(255, 206, 221, 204);
   static const Color corBackgroundCampo = Color.fromARGB(255, 255, 255, 255);
+
+  // CONFIGURAÇÃO DOS CARD (GESTÃO PDF)
+  static const String backgroundPdfApp =
+      'assets/imagens/tela_fundo/dashboard.png';
+
+  static const Color corBackgrounPdfdAdmin = Color.fromARGB(255, 144, 177, 140);
+  static const Color PdfPrimary = Color.fromARGB(255, 255, 255, 255);
+  static const Color PdfonPrimary = Color.fromARGB(255, 28, 10, 34);
+
+  static const Color PdfOne = Color.fromARGB(255, 16, 1, 9);
+  static const Color PdfTwo = Color.fromARGB(255, 80, 2, 87);
+  static const Color PdfThree = Color.fromARGB(255, 100, 5, 37);
+  static const Color PdfFour = Color.fromARGB(255, 67, 160, 71);
+  static const Color PdfFive = Color.fromARGB(255, 154, 39, 174);
+  static const Color PdfSix = Color.fromARGB(255, 230, 81, 0);
+  static const Color PdfSeven = Color.fromARGB(255, 2, 119, 189);
 }
 
 // =============================================================

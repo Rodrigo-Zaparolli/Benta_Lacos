@@ -4,8 +4,8 @@ import '../../shared/sections/header/cabecalho.dart';
 import '../../shared/sections/footer/rodape.dart';
 import '../../shared/widgets/background_fundo.dart';
 
-class NossaHistoriaPage extends StatelessWidget {
-  const NossaHistoriaPage({super.key});
+class OQueFacoPage extends StatelessWidget {
+  const OQueFacoPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -23,17 +23,18 @@ class NossaHistoriaPage extends StatelessWidget {
                 child: StreamBuilder<DocumentSnapshot>(
                   stream: FirebaseFirestore.instance
                       .collection('institucional')
-                      .doc('nossa_historia')
+                      .doc('oque_faco')
                       .snapshots(),
                   builder: (context, snapshot) {
-                    if (!snapshot.hasData) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(child: CircularProgressIndicator());
                     }
 
-                    var data = snapshot.data!.data() as Map<String, dynamic>?;
-                    String titulo = data?['titulo'] ?? 'Nossa História';
+                    var data = snapshot.data?.data() as Map<String, dynamic>?;
+                    String titulo = data?['titulo'] ?? 'O Que Faço';
                     String conteudo = data?['conteudo'] ?? 'Em breve...';
                     String? urlImagem = data?['urlImagem'];
+                    bool temImagem = urlImagem != null && urlImagem.isNotEmpty;
                     double larguraDefinida = (data?['larguraImagem'] ?? 350)
                         .toDouble();
 
@@ -68,7 +69,8 @@ class NossaHistoriaPage extends StatelessWidget {
                                 spacing: 40,
                                 runSpacing: 30,
                                 children: [
-                                  if (urlImagem != null && urlImagem.isNotEmpty)
+                                  // Se tiver imagem, renderiza o box da imagem
+                                  if (temImagem)
                                     SizedBox(
                                       width: isMobile
                                           ? constraints.maxWidth
@@ -76,7 +78,7 @@ class NossaHistoriaPage extends StatelessWidget {
                                       child: ClipRRect(
                                         borderRadius: BorderRadius.circular(15),
                                         child: Image.network(
-                                          urlImagem,
+                                          urlImagem!,
                                           fit: BoxFit.contain,
                                           errorBuilder:
                                               (context, error, stackTrace) =>
@@ -84,8 +86,9 @@ class NossaHistoriaPage extends StatelessWidget {
                                         ),
                                       ),
                                     ),
+                                  // Texto: se não tem imagem, ocupa maxWidth. Se tem, calcula o restante.
                                   SizedBox(
-                                    width: isMobile
+                                    width: !temImagem || isMobile
                                         ? constraints.maxWidth
                                         : (1000 - larguraDefinida - 40).clamp(
                                             300,
@@ -93,7 +96,9 @@ class NossaHistoriaPage extends StatelessWidget {
                                           ),
                                     child: Text(
                                       conteudo,
-                                      textAlign: TextAlign.justify,
+                                      textAlign: temImagem
+                                          ? TextAlign.justify
+                                          : TextAlign.center,
                                       style: const TextStyle(
                                         fontSize: 18,
                                         height: 1.7,

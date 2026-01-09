@@ -152,6 +152,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
         frete: _valorFrete,
         metodoPagamento: _metodoPagamento,
         enderecoCompleto: "$_endereco, $_numeroCasa - $_bairro, $_cidade/$_uf",
+        dataPedido: Timestamp.now(),
       );
 
       // 4. Preparar mensagem WhatsApp

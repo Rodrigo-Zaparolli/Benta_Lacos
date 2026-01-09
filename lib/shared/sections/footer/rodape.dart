@@ -1,6 +1,8 @@
 import 'package:benta_lacos/pages/cliente/login_page.dart';
 import 'package:benta_lacos/pages/cliente/minha_conta.dart';
 import 'package:benta_lacos/pages/institucional/nossa_historia_page.dart';
+import 'package:benta_lacos/pages/institucional/oque_faco_page.dart';
+import 'package:benta_lacos/pages/institucional/quem_sou_page.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -144,19 +146,18 @@ class Rodape extends StatelessWidget {
                     ),
                   );
                 }, rodape),
-                _link("Entregas", () {
+                _link("Quem Sou", () {
                   // ✅ Ajuste para o nome da classe correto no seu arquivo de entregas
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const EnvioEntregaPage()),
+                    MaterialPageRoute(builder: (_) => const QuemSouPage()),
                   );
                 }, rodape),
-                _link("Trocas", () {
+                _link("Oque Faço", () {
+                  // ✅ Ajuste para o nome da classe correto no seu arquivo de entregas
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (_) => const TrocasDevolucoesPage(),
-                    ),
+                    MaterialPageRoute(builder: (_) => const OQueFacoPage()),
                   );
                 }, rodape),
               ], rodape),
@@ -176,6 +177,21 @@ class Rodape extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const MeusPedidosPage()),
+                  );
+                }, rodape),
+                _link("Entregas", () {
+                  // ✅ Ajuste para o nome da classe correto no seu arquivo de entregas
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const EnvioEntregaPage()),
+                  );
+                }, rodape),
+                _link("Trocas", () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const TrocasDevolucoesPage(),
+                    ),
                   );
                 }, rodape),
                 _link("Dúvidas", () {
