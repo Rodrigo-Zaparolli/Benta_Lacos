@@ -38,7 +38,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
   bool _processando = false;
   bool _loading = true;
 
-  // Dados do Cliente
   String _nomeCompleto = 'Carregando...';
   String _emailCliente = '';
   String _telefoneCliente = '';
@@ -108,33 +107,34 @@ class _CheckoutPageState extends State<CheckoutPage> {
       final String pedidoId = _firestore.collection('pedidos').doc().id;
       final double totalFinal = totalItens + _valorFrete;
 
+      // ✅ CONVERSÃO MANUAL PARA EVITAR TypeError: transforma CartItem em Map compatível com o PDF
+      final List<Map<String, dynamic>> itensParaEnvio = itensSelecionados.map((
+        item,
+      ) {
+        return {
+          'id': item.product.id,
+          'nome': item.product.name,
+          'preco': item.product.price,
+          'quantidade': item.quantity,
+          'imageUrl': item.product.imageUrl,
+        };
+      }).toList();
+
       final batch = _firestore.batch();
 
-      // 1. Gravar o Pedido no Firestore (Agora incluindo a URL da imagem)
       batch.set(_firestore.collection('pedidos').doc(pedidoId), {
         'pedidoId': pedidoId,
         'clienteId': _auth.currentUser?.uid,
         'nomeCliente': _nomeCompleto,
         'total': totalFinal,
         'valorFrete': _valorFrete,
-        'itens': itensSelecionados
-            .map(
-              (i) => {
-                'id': i.product.id,
-                'nome': i.product.name,
-                'preco': i.product.price,
-                'quantidade': i.quantity,
-                'imageUrl': i.product.imageUrl, // Importante para o PDF
-              },
-            )
-            .toList(),
+        'itens': itensParaEnvio,
         'metodoPagamento': _metodoPagamento,
         'metodoEnvio': _metodoEnvio,
         'status': 'Pendente',
         'dataPedido': FieldValue.serverTimestamp(),
       });
 
-      // 2. Atualizar Estoque
       for (var item in itensSelecionados) {
         batch.update(_firestore.collection('produtos').doc(item.product.id), {
           'quantity': FieldValue.increment(-item.quantity),
@@ -143,11 +143,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
       await batch.commit();
 
-      // 3. GERAR PDF COM IMAGENS
+      // ✅ ENVIO DA LISTA CORRIGIDA PARA O PDF
       await PdfServiceCliente.gerarComprovantePedido(
         pedidoId: pedidoId,
         nomeCliente: _nomeCompleto,
-        itens: itensSelecionados,
+        itens: itensParaEnvio,
         total: totalFinal,
         frete: _valorFrete,
         metodoPagamento: _metodoPagamento,
@@ -155,7 +155,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
         dataPedido: Timestamp.now(),
       );
 
-      // 4. Preparar mensagem WhatsApp
       String mensagem =
           "🛍️ *Novo Pedido - Benta Laços*\n\n"
           "👤 *Cliente:* $_nomeCompleto\n"
@@ -175,10 +174,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
       final url =
           "https://wa.me/5554999264865?text=${Uri.encodeComponent(mensagem)}";
 
-      // 5. Limpeza e Redirecionamento
       if (await canLaunchUrl(Uri.parse(url))) {
         await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-
         if (mounted) {
           await context.read<CartProvider>().limparItensComprados();
           Navigator.of(context).popUntil((route) => route.isFirst);
@@ -201,7 +198,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
     final itensParaCompra = cart.items
         .where((item) => item.selecionado == true)
         .toList();
-
     double subtotalSelecionados = itensParaCompra.fold(
       0,
       (sum, item) => sum + (item.product.price * item.quantity),

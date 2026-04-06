@@ -14,7 +14,7 @@ import '../../widgets/hover_link.dart';
 import 'package:benta_lacos/pages/institucional/duvidas_page.dart';
 
 import 'package:benta_lacos/pages/institucional/envio_entrega_page.dart';
-import 'package:benta_lacos/pages/institucional/trocas_devolucoes_page.dart';
+//import 'package:benta_lacos/pages/institucional/trocas_devolucoes_page.dart';
 import 'package:benta_lacos/pages/cliente/meus_pedidos_page.dart'; // ✅ Verifique se este é o caminho real
 
 class Rodape extends StatelessWidget {
@@ -186,14 +186,14 @@ class Rodape extends StatelessWidget {
                     MaterialPageRoute(builder: (_) => const EnvioEntregaPage()),
                   );
                 }, rodape),
-                _link("Trocas", () {
+                /* _link("Trocas", () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (_) => const TrocasDevolucoesPage(),
                     ),
                   );
-                }, rodape),
+                }, rodape),*/
                 _link("Dúvidas", () {
                   Navigator.push(
                     context,

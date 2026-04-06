@@ -9,6 +9,24 @@ class CartItem {
   bool selecionado;
 
   CartItem({required this.product, this.quantity = 1, this.selecionado = true});
+
+  // ✅ ADICIONADO (RESOLVE SEU ERRO)
+  Map<String, dynamic> toMap() {
+    return {
+      'product': product.toMap(),
+      'quantity': quantity,
+      'selecionado': selecionado,
+    };
+  }
+
+  // ✅ EXTRA (PROFISSIONAL)
+  factory CartItem.fromMap(Map<String, dynamic> map, String productId) {
+    return CartItem(
+      product: Product.fromMap(map['product'], productId),
+      quantity: (map['quantity'] as num? ?? 1).toInt(),
+      selecionado: map['selecionado'] as bool? ?? true,
+    );
+  }
 }
 
 class CartProvider with ChangeNotifier {
@@ -30,12 +48,9 @@ class CartProvider with ChangeNotifier {
     return total;
   }
 
-  /// NOVO MÉTODO: Remove apenas os itens que foram comprados (selecionados)
-  /// Limpa tanto a lista local quanto o banco de dados Firestore
   Future<void> limparItensComprados() async {
     final user = _auth.currentUser;
 
-    // Filtra apenas os itens que estavam marcados para compra
     final itensParaRemover = _items.where((item) => item.selecionado).toList();
 
     if (user != null && itensParaRemover.isNotEmpty) {
@@ -49,14 +64,12 @@ class CartProvider with ChangeNotifier {
               .doc(item.product.id);
           batch.delete(cartRef);
         }
-        // Executa a exclusão em massa no Firestore
         await batch.commit();
       } catch (e) {
         debugPrint("Erro ao limpar itens comprados no Firestore: $e");
       }
     }
 
-    // Atualiza a lista local removendo apenas os comprados
     _items.removeWhere((item) => item.selecionado);
     notifyListeners();
   }
@@ -78,6 +91,7 @@ class CartProvider with ChangeNotifier {
   Future<void> sincronizarDoFirestore(String uid) async {
     try {
       _items.clear();
+
       final cartSnapshot = await _firestore
           .collection('usuarios')
           .doc(uid)
@@ -86,13 +100,9 @@ class CartProvider with ChangeNotifier {
 
       for (var doc in cartSnapshot.docs) {
         final data = doc.data();
-        _items.add(
-          CartItem(
-            product: Product.fromMap(data['product'], doc.id),
-            quantity: (data['quantity'] as num? ?? 1).toInt(),
-            selecionado: data['selecionado'] as bool? ?? true,
-          ),
-        );
+
+        // ✅ USANDO fromMap (mais limpo agora)
+        _items.add(CartItem.fromMap(data, doc.id));
       }
 
       final favSnapshot = await _firestore
@@ -104,16 +114,12 @@ class CartProvider with ChangeNotifier {
       for (var doc in favSnapshot.docs) {
         final data = doc.data();
         bool jaExiste = _items.any((item) => item.product.id == doc.id);
+
         if (!jaExiste) {
-          _items.add(
-            CartItem(
-              product: Product.fromMap(data['product'], doc.id),
-              quantity: (data['quantity'] as num? ?? 1).toInt(),
-              selecionado: true,
-            ),
-          );
+          _items.add(CartItem.fromMap(data, doc.id));
         }
       }
+
       notifyListeners();
     } catch (e) {
       debugPrint("Erro ao sincronizar: $e");
@@ -130,6 +136,7 @@ class CartProvider with ChangeNotifier {
     try {
       if (_items.isNotEmpty) {
         final batch = _firestore.batch();
+
         for (var item in _items) {
           final favRef = _firestore
               .collection('usuarios')
@@ -137,21 +144,20 @@ class CartProvider with ChangeNotifier {
               .collection('favoritos')
               .doc(item.product.id);
 
-          batch.set(favRef, {
-            'product': item.product.toMap(),
-            'quantity': item.quantity,
-            'data_movido': FieldValue.serverTimestamp(),
-          });
+          batch.set(favRef, item.toMap()); // ✅ MELHORADO
 
           final cartRef = _firestore
               .collection('usuarios')
               .doc(user.uid)
               .collection('carrinho')
               .doc(item.product.id);
+
           batch.delete(cartRef);
         }
+
         await batch.commit();
       }
+
       clear();
     } catch (e) {
       debugPrint("Erro no logout: $e");
@@ -160,6 +166,7 @@ class CartProvider with ChangeNotifier {
 
   void addItem(Product product, [int quantity = 1]) {
     int index = _items.indexWhere((item) => item.product.id == product.id);
+
     if (index >= 0) {
       _items[index].quantity += quantity;
       _atualizarNoFirestore(_items[index]);
@@ -168,11 +175,13 @@ class CartProvider with ChangeNotifier {
       _items.add(novoItem);
       _atualizarNoFirestore(novoItem);
     }
+
     notifyListeners();
   }
 
   void removeSingleItem(String productId) {
     int index = _items.indexWhere((item) => item.product.id == productId);
+
     if (index >= 0) {
       if (_items[index].quantity > 1) {
         _items[index].quantity -= 1;
@@ -180,13 +189,16 @@ class CartProvider with ChangeNotifier {
       } else {
         clearItem(productId);
       }
+
       notifyListeners();
     }
   }
 
   void clearItem(String productId) {
     _items.removeWhere((item) => item.product.id == productId);
+
     final user = _auth.currentUser;
+
     if (user != null) {
       _firestore
           .collection('usuarios')
@@ -195,23 +207,20 @@ class CartProvider with ChangeNotifier {
           .doc(productId)
           .delete();
     }
+
     notifyListeners();
   }
 
   Future<void> _atualizarNoFirestore(CartItem item) async {
     final user = _auth.currentUser;
     if (user == null) return;
+
     await _firestore
         .collection('usuarios')
         .doc(user.uid)
         .collection('carrinho')
         .doc(item.product.id)
-        .set({
-          'quantity': item.quantity,
-          'selecionado': item.selecionado,
-          'product': item.product.toMap(),
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
+        .set(item.toMap()); // ✅ PADRONIZADO
   }
 
   void removeItem(String id) {

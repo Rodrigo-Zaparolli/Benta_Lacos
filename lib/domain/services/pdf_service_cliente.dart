@@ -7,16 +7,10 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
 class PdfServiceCliente {
-  /// =====================================================
-  /// 🔒 CONVERSÃO SEGURA DE DATA (FIREBASE TIMESTAMP)
-  /// =====================================================
   static String _formatarData(dynamic raw) {
     if (raw == null) return "N/A";
-
     DateTime data;
-
     if (raw is Timestamp) {
-      // Converte o formato do Firebase mostrado na imagem
       data = raw.toDate();
     } else if (raw is DateTime) {
       data = raw;
@@ -25,13 +19,9 @@ class PdfServiceCliente {
     } else {
       return "Data Inválida";
     }
-
     return DateFormat('dd/MM/yyyy HH:mm').format(data);
   }
 
-  /// =====================================================
-  /// 📄 GERA COMPROVANTE DE PEDIDO
-  /// =====================================================
   static Future<void> gerarComprovantePedido({
     required String pedidoId,
     required String nomeCliente,
@@ -43,18 +33,13 @@ class PdfServiceCliente {
     required dynamic dataPedido,
   }) async {
     final pdf = pw.Document();
-
-    // Formata a data antes de iniciar a construção do PDF
     final String dataExibicao = _formatarData(dataPedido);
-
     final Map<String, Uint8List?> imagens = {};
 
-    // Cache de imagens dos itens
     for (final item in itens) {
       final map = item as Map<String, dynamic>;
       final String id = map['id'] ?? map['nome'] ?? '';
       final String? url = map['imageUrl'];
-
       if (url != null && url.isNotEmpty) {
         try {
           final response = await http
@@ -75,7 +60,6 @@ class PdfServiceCliente {
           return pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-              // Cabeçalho Principal
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
@@ -94,7 +78,6 @@ class PdfServiceCliente {
                         'Pedido #${pedidoId.substring(0, 8).toUpperCase()}',
                         style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
                       ),
-                      // Exibição da Data corrigida
                       pw.Text('Data do Pedido: $dataExibicao'),
                       pw.Text(
                         'Status: Confirmado',
@@ -107,10 +90,7 @@ class PdfServiceCliente {
                   ),
                 ],
               ),
-
               pw.SizedBox(height: 20),
-
-              // Seção de Endereço e Pagamento
               pw.Container(
                 width: double.infinity,
                 padding: const pw.EdgeInsets.all(12),
@@ -141,10 +121,7 @@ class PdfServiceCliente {
                   ],
                 ),
               ),
-
               pw.SizedBox(height: 20),
-
-              // Tabela de Produtos
               pw.Container(
                 color: PdfColor.fromHex('#E91E63'),
                 padding: const pw.EdgeInsets.all(6),
@@ -157,13 +134,15 @@ class PdfServiceCliente {
                   ],
                 ),
               ),
-
               ...itens.map((item) {
                 final map = item as Map<String, dynamic>;
                 final nome = map['nome'] ?? '';
-                final qtd = map['quantidade'] ?? 1;
-                final preco = (map['preco'] as num).toDouble();
-                final id = map['id'] ?? map['nome'];
+
+                // ✅ PROTEÇÃO CONTRA NULO: usando ?? 0 para evitar o erro de Null is not subtype of num
+                final qtd = map['quantidade'] ?? 0;
+                final preco = (map['preco'] ?? 0).toDouble();
+
+                final id = map['id'] ?? nome;
                 final img = imagens[id];
 
                 return pw.Container(
@@ -225,10 +204,7 @@ class PdfServiceCliente {
                   ),
                 );
               }).toList(),
-
               pw.SizedBox(height: 20),
-
-              // Resumo Financeiro
               pw.Align(
                 alignment: pw.Alignment.centerRight,
                 child: pw.SizedBox(
