@@ -1,3 +1,4 @@
+import 'package:benta_lacos/core/config/store_environment.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
@@ -25,7 +26,7 @@ class EstoqueReportPage extends StatelessWidget {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           // Busca os produtos atualizados no banco
-          final snap = await FirebaseFirestore.instance
+          final snap = await StoreEnvironment.database
               .collection('produtos')
               .get();
 
@@ -83,7 +84,7 @@ class EstoqueReportPage extends StatelessWidget {
             // --- CONTEÚDO ---
             Expanded(
               child: StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance
+                stream: StoreEnvironment.database
                     .collection('produtos')
                     .snapshots(),
                 builder: (context, snapshot) {

@@ -11,35 +11,35 @@ dependencies:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
-  
-  # Versões compatíveis para o Editor de Texto
-  flutter_quill: ^11.5.0
-  intl: 0.20.2 # Mantenha APENAS esta versão
+
+  # Versões compatíveis atualizadas para o Editor de Texto
+  flutter_quill: ^11.5.1
+  intl: 0.20.2
 
   # FIREBASE
-  firebase_core: ^3.6.0
-  firebase_auth: ^5.3.0
-  cloud_firestore: ^5.4.0
-  firebase_storage: ^12.3.0
+  firebase_core: ^3.15.2
+  firebase_auth: ^5.7.0
+  cloud_firestore: ^5.6.12
+  firebase_storage: ^12.4.10
 
-  # PDF / RELATÓRIOS (Removi o intl duplicado daqui)
+  # PDF / RELATÓRIOS
   pdf: ^3.11.3
-  printing: ^5.13.1
-  fl_chart: ^0.66.0
+  printing: ^5.14.2
+  fl_chart: ^0.66.2
 
-  # RESTANTE DAS DEPENDÊNCIAS
+  # RESTANTE DAS DEPENDÊNCIAS (Atualizadas para evitar conflitos)
   provider: ^6.1.2
-  url_launcher: ^6.3.0
-  flutter_slidable: ^3.0.0
+  url_launcher: ^6.3.1
+  flutter_slidable: ^3.1.2
   cupertino_icons: ^1.0.8
-  font_awesome_flutter: ^10.7.0
+  font_awesome_flutter: ^11.0.0
   flutter_card_swiper: ^7.0.1
   confetti: ^0.7.0
   qr_flutter: ^4.1.0
   mask_text_input_formatter: ^2.5.0
-  file_picker: ^8.0.0
+  file_picker: ^8.3.7
   http: ^1.2.1
-  brasil_fields: ^1.15.0
+  brasil_fields: ^1.18.0
   validatorless: ^1.2.5
 
 dev_dependencies:
@@ -50,6 +50,11 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  fonts:
+    - family: Montserrat
+      fonts:
+        - asset: assets/fonts/Montserrat.ttf
+
 
   assets:
     # Logos e banners

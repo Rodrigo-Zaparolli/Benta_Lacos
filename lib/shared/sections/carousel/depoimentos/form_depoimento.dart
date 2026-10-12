@@ -1,3 +1,4 @@
+import 'package:benta_lacos/core/config/store_environment.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -16,7 +17,7 @@ class _FormDepoimentoState extends State<FormDepoimento> {
 
   Future<void> _enviarDepoimento() async {
     if (_formKey.currentState!.validate()) {
-      await FirebaseFirestore.instance.collection('depoimentos').add({
+      await StoreEnvironment.database.collection('depoimentos').add({
         'cliente': _nomeController.text,
         'texto': _textoController.text,
         'estrelas': _estrelas,

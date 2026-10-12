@@ -1,12 +1,13 @@
+import 'package:benta_lacos/core/config/store_environment.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:validatorless/validatorless.dart';
 import 'package:provider/provider.dart';
 
-// Imports do seu projeto
+// Certifique-se de que estes caminhos estão corretos no seu projeto
 import '../../shared/sections/header/cabecalho.dart';
-import '../../shared/sections/footer/rodape.dart'; // 👈 Importando o rodapé
+import '../../shared/sections/footer/rodape.dart';
 import '../../shared/widgets/background_fundo.dart';
 import '../../shared/theme/tema_site.dart';
 import '../../domain/providers/cart_provider.dart';
@@ -56,7 +57,7 @@ class _LoginPageState extends State<LoginPage> {
 
       if (!mounted) return;
 
-      final doc = await FirebaseFirestore.instance
+      final doc = await StoreEnvironment.database
           .collection('usuarios')
           .doc(uid)
           .get();
@@ -73,7 +74,11 @@ class _LoginPageState extends State<LoginPage> {
       if (tipo == 'admin') {
         Navigator.pushReplacementNamed(context, '/admin');
       } else {
-        Navigator.pushReplacementNamed(context, '/home');
+        if (Navigator.canPop(context)) {
+          Navigator.pop(context);
+        } else {
+          Navigator.pushReplacementNamed(context, '/home');
+        }
       }
     } on FirebaseAuthException catch (e) {
       String erroMsg = 'E-mail ou senha incorretos.';
@@ -99,12 +104,10 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       body: BackgroundFundo(
         child: SingleChildScrollView(
-          // 👈 Alterado para permitir que o rodapé flua naturalmente
           child: Column(
             children: [
               const Cabecalho(),
 
-              // Conteúdo do Login
               Padding(
                 padding: const EdgeInsets.symmetric(
                   vertical: 60,
@@ -252,7 +255,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
 
-              const Rodape(), // 👈 Adicionado aqui no final da coluna
+              const Rodape(),
             ],
           ),
         ),

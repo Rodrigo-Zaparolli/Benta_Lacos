@@ -1,506 +1,284 @@
-import 'package:benta_lacos/pages/admin/institucional/editar_oque_faco_page.dart';
-import 'package:benta_lacos/pages/admin/institucional/editar_politica_page.dart';
-import 'package:benta_lacos/pages/admin/institucional/editar_quem_sou_page.dart';
+import 'package:benta_lacos/core/config/store_environment.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
-// --- IMPORTAÇÕES DAS SUBPÁGINAS ---
-import 'package:benta_lacos/pages/admin/institucional/editar_depoimentos_page.dart';
-import 'package:benta_lacos/pages/admin/institucional/editar_historia_page.dart';
-import 'package:benta_lacos/pages/admin/institucional/editar_contato_page.dart';
-import 'package:benta_lacos/pages/admin/relatorios/relatorios_page.dart';
-import 'package:benta_lacos/pages/admin/institucional/editar_trocas_devolucoes_page.dart';
-import 'package:benta_lacos/pages/admin/institucional/editar_envio_entrega_page.dart';
-import 'package:benta_lacos/pages/admin/institucional/editar_duvidas_page.dart';
-import 'package:benta_lacos/pages/admin/pedidos/gestao_pedidos_page.dart';
-
-// --- TEMA E COMPONENTES ---
-import '../../../shared/theme/tema_site.dart';
-import '../../../domain/repository/product_repository.dart';
-import 'package:benta_lacos/domain/models/product_model.dart';
-import '../../../shared/widgets/product_form.dart';
+import '../widgets/admin_ui.dart';
+import '../widgets/admin_access_view.dart';
+import '../widgets/admin_actions.dart';
+import '../dashboard/admin_overview.dart';
+import '../dashboard/admin_products.dart';
+import '../dashboard/admin_clients.dart';
+import '../pedidos/gestao_pedidos_page.dart';
+import '../relatorios/relatorios_page.dart';
+import '../institucional/editar_depoimentos_page.dart';
+import '../institucional/editar_historia_page.dart';
+import '../institucional/editar_contato_page.dart';
+import '../institucional/editar_trocas_devolucoes_page.dart';
+import '../institucional/editar_envio_entrega_page.dart';
+import '../institucional/editar_duvidas_page.dart';
+import '../institucional/editar_quem_sou_page.dart';
+import '../institucional/editar_oque_faco_page.dart';
+import '../institucional/editar_politica_page.dart';
 
 class AdminPage extends StatefulWidget {
   final bool isSplitView;
-  const AdminPage({super.key, this.isSplitView = false});
-
+  final int initialSection;
+  final Widget? initialEditor;
+  const AdminPage({
+    super.key,
+    this.isSplitView = false,
+    this.initialSection = 0,
+    this.initialEditor,
+  });
   @override
   State<AdminPage> createState() => _AdminPageState();
 }
 
 class _AdminPageState extends State<AdminPage> {
-  String _categoriaSelecionada = 'Todos';
-  String _buscaQuery = '';
-  bool _isAdmin = false;
-  bool _isLoading = true;
-
-  final List<String> _categorias = [
-    'Todos',
-    'Laços',
-    'Tiaras',
-    'Presilhas',
-    'Kits',
-    'Faixas',
-  ];
-
+  late int _selected;
+  int _retry = 0;
+  String _orderFilter = 'Todos';
+  late Stream<User?> _authStream;
+  Stream<DocumentSnapshot<Map<String, dynamic>>>? _roleStream;
+  String? _roleUser;
   @override
   void initState() {
     super.initState();
-    _checkAdminAccess();
-    ProductRepository.instance.addListener(_onChanged);
+    _authStream = FirebaseAuth.instance.authStateChanges();
+    _selected = widget.initialSection.clamp(0, 7);
   }
 
+  void _select(int index) => setState(() {
+    _selected = index;
+    if (index == 1) _orderFilter = 'Todos';
+  });
+  void _openOrders(String status) => setState(() {
+    _orderFilter = status;
+    _selected = 1;
+  });
+  void _store() => Navigator.of(
+    context,
+    rootNavigator: true,
+  ).pushNamedAndRemoveUntil('/', (_) => false);
+  Widget _access(String message, {bool retry = false, bool login = false}) =>
+      AdminAccessView(
+        message: message,
+        onStore: _store,
+        onLogin: login
+            ? () =>
+                  Navigator.of(context, rootNavigator: true).pushNamed('/login')
+            : null,
+        onRetry: retry
+            ? () => setState(() {
+                _retry++;
+                _roleStream = null;
+                _authStream = FirebaseAuth.instance.authStateChanges();
+              })
+            : null,
+      );
   @override
-  void dispose() {
-    ProductRepository.instance.removeListener(_onChanged);
-    super.dispose();
-  }
-
-  void _onChanged() {
-    if (mounted) setState(() {});
-  }
-
-  Future<void> _checkAdminAccess() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      _denyAccess();
-      return;
-    }
-    try {
-      final doc = await FirebaseFirestore.instance
-          .collection('usuarios')
-          .doc(user.uid)
-          .get();
-      if (doc.exists && doc.data()?['tipo'] == 'admin') {
-        if (mounted)
-          setState(() {
-            _isAdmin = true;
-            _isLoading = false;
-          });
-      } else {
-        _denyAccess();
+  Widget build(BuildContext context) => StreamBuilder<User?>(
+    stream: _authStream,
+    builder: (context, auth) {
+      if (auth.connectionState == ConnectionState.waiting)
+        return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      if (auth.hasError)
+        return _access('Não foi possível verificar sua sessão.', retry: true);
+      if (auth.data == null)
+        return _access(
+          'Entre com uma conta administradora para acessar o painel.',
+          login: true,
+        );
+      if (_roleUser != auth.data!.uid) {
+        _roleUser = auth.data!.uid;
+        _roleStream = null;
       }
-    } catch (e) {
-      _denyAccess();
-    }
-  }
+      _roleStream ??= StoreEnvironment.database
+          .collection('usuarios')
+          .doc(auth.data!.uid)
+          .snapshots();
+      return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+        key: ValueKey('${auth.data!.uid}:$_retry'),
+        stream: _roleStream,
+        builder: (context, role) {
+          if (role.hasError)
+            return _access(
+              'Não foi possível verificar a permissão de acesso.',
+              retry: true,
+            );
+          if (!role.hasData)
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          if (role.data!.data()?['tipo'] != 'admin')
+            return _access('Esta conta não possui acesso à administração.');
+          return AdminLayout(
+            email: auth.data!.email ?? '',
+            selected: _selected,
+            onSelect: _select,
+            onStore: _store,
+            onLogout: () async {
+              try {
+                await FirebaseAuth.instance.signOut();
+                if (mounted) _store();
+              } catch (_) {
+                if (mounted)
+                  adminMessage(
+                    context,
+                    'Não foi possível sair. Tente novamente.',
+                  );
+              }
+            },
+            child: Navigator(
+              key: ValueKey('admin:$_selected:$_orderFilter'),
+              onGenerateInitialRoutes: (navigator, initialRoute) => [
+                MaterialPageRoute(
+                  builder: (_) => _section(auth.data!.email ?? ''),
+                ),
+                if (widget.initialEditor != null &&
+                    _selected == widget.initialSection)
+                  MaterialPageRoute(builder: (_) => widget.initialEditor!),
+              ],
+              onGenerateRoute: (_) => MaterialPageRoute(
+                builder: (_) => _section(auth.data!.email ?? ''),
+              ),
+            ),
+          );
+        },
+      );
+    },
+  );
 
-  void _denyAccess() {
-    if (mounted) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Acesso restrito.')));
-        Navigator.of(context).pushReplacementNamed('/home');
-      });
-    }
-  }
+  Widget _section(String email) => switch (_selected) {
+    0 => AdminOverview(onOpen: _select, onOpenOrders: _openOrders),
+    1 => GestaoPedidosPage(embedded: true, initialStatus: _orderFilter),
+    2 => const AdminProducts(),
+    3 => const AdminProducts(stock: true),
+    4 => const AdminClients(),
+    5 => const RelatoriosPage(embedded: true),
+    6 => const _ContentMenu(),
+    _ => _Settings(email: email),
+  };
+}
 
+class _ContentMenu extends StatelessWidget {
+  const _ContentMenu();
   @override
   Widget build(BuildContext context) {
-    if (_isLoading)
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-
-    final filteredProducts = ProductRepository.instance.products.where((p) {
-      final matchesBusca = p.name.toLowerCase().contains(
-        _buscaQuery.toLowerCase(),
-      );
-      final matchesCat =
-          _categoriaSelecionada == 'Todos' ||
-          p.category == _categoriaSelecionada;
-      return matchesBusca && matchesCat;
-    }).toList();
-
-    double larguraTela = MediaQuery.of(context).size.width;
-    int colunasGrid = larguraTela > 1100 ? 3 : (larguraTela > 700 ? 2 : 1);
-
-    return Scaffold(
-      backgroundColor: TemaAdmin.corBackgroundAdmin,
-      appBar: widget.isSplitView
-          ? null
-          : AppBar(
-              title: const Text('Painel Administrativo'),
-              flexibleSpace: Container(
-                decoration: BoxDecoration(
-                  image: DecorationImage(
-                    image: AssetImage(TemaAdmin.admin.pathBackground),
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-            ),
-      body: CustomScrollView(
-        slivers: [
-          // --- GESTÃO DE CONTEÚDO (Botões largos e quase juntos) ---
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    " Gestão de Conteúdo",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 6),
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      // Define quantos botões por linha baseado na largura
-                      int itensPorLinha = constraints.maxWidth > 1000
-                          ? 11
-                          : (constraints.maxWidth > 600 ? 3 : 2);
-                      double espacamento = 4.0; // Espaço bem pequeno entre eles
-                      double larguraBotao =
-                          (constraints.maxWidth -
-                              (espacamento * (itensPorLinha - 1))) /
-                          itensPorLinha;
-
-                      return Wrap(
-                        spacing: espacamento,
-                        runSpacing: espacamento,
-                        children: [
-                          _buildWideActionButton(
-                            context,
-                            "Relatórios",
-                            Icons.analytics,
-                            TemaAdmin.ContainerOne,
-                            const RelatoriosPage(),
-                            larguraBotao,
-                          ),
-                          _buildWideActionButton(
-                            context,
-                            "Pedidos",
-                            Icons.shopping_cart,
-                            TemaAdmin.ContainerNine,
-                            const GestaoPedidosPage(),
-                            larguraBotao,
-                          ),
-                          _buildWideActionButton(
-                            context,
-                            "Depoimentos",
-                            Icons.message,
-                            TemaAdmin.ContainerTwo,
-                            const GestaoDepoimentosPage(),
-                            larguraBotao,
-                          ),
-                          _buildWideActionButton(
-                            context,
-                            "História",
-                            Icons.book,
-                            TemaAdmin.ContainerThree,
-                            const EditarHistoriaPage(),
-                            larguraBotao,
-                          ),
-
-                          _buildWideActionButton(
-                            context,
-                            "Quem Sou",
-                            Icons.book,
-                            TemaAdmin.ContainerTen,
-                            const EditarQuemSouPage(),
-                            larguraBotao,
-                          ),
-
-                          _buildWideActionButton(
-                            context,
-                            "Oque Faço",
-                            Icons.book,
-                            TemaAdmin.ContainerEleven,
-                            const EditarOQueFacoPage(),
-                            larguraBotao,
-                          ),
-
-                          _buildWideActionButton(
-                            context,
-                            "Contatos",
-                            Icons.phone,
-                            TemaAdmin.ContainerFour,
-                            const EditarContatoPage(),
-                            larguraBotao,
-                          ),
-                          _buildWideActionButton(
-                            context,
-                            "Dúvidas",
-                            Icons.help_outline,
-                            TemaAdmin.ContainerFive,
-                            const EditarDuvidasPage(),
-                            larguraBotao,
-                          ),
-                          _buildWideActionButton(
-                            context,
-                            "Trocas",
-                            Icons.swap_horiz,
-                            TemaAdmin.ContainerSix,
-                            const EditarTrocasDevolucoesPage(),
-                            larguraBotao,
-                          ),
-                          _buildWideActionButton(
-                            context,
-                            "Envio",
-                            Icons.local_shipping,
-                            TemaAdmin.ContainerSeven,
-                            const EditarEnvioEntregaPage(),
-                            larguraBotao,
-                          ),
-                          _buildWideActionButton(
-                            context,
-                            "Políticas",
-                            Icons.gavel,
-                            TemaAdmin.ContainerEight,
-                            const EditarPoliticaPage(),
-                            larguraBotao,
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // --- ESTOQUE DE PRODUTOS ---
-          _buildHeaderSliver("Estoque de Produtos"),
-          _buildSearchBarSliver(),
-          _buildFiltersSliver(),
-
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            sliver: SliverGrid(
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: colunasGrid,
-                mainAxisSpacing: 8,
-                crossAxisSpacing: 8,
-                mainAxisExtent: 85,
-              ),
-              delegate: SliverChildBuilderDelegate(
-                (context, i) => _buildProductCard(filteredProducts[i]),
-                childCount: filteredProducts.length,
-              ),
-            ),
-          ),
-          const SliverToBoxAdapter(child: SizedBox(height: 80)),
-        ],
+    final pages = <(String, String, Widget)>[
+      (
+        'História da marca',
+        'Conte a origem da Benta Laços.',
+        const EditarHistoriaPage(),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: TemaAdmin.onAdminEditor,
-        onPressed: () => _openForm(null),
-        label: const Text(
-          "ADICIONAR PRODUTO",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+      (
+        'Quem sou',
+        'Apresente a responsável pela loja.',
+        const EditarQuemSouPage(),
+      ),
+      (
+        'O que faço',
+        'Descreva o trabalho e os produtos.',
+        const EditarOQueFacoPage(),
+      ),
+      (
+        'Depoimentos',
+        'Gerencie a prova social da loja.',
+        const GestaoDepoimentosPage(),
+      ),
+      (
+        'Dúvidas frequentes',
+        'Responda às perguntas dos clientes.',
+        const EditarDuvidasPage(),
+      ),
+      (
+        'Envio e entrega',
+        'Atualize prazos e modalidades.',
+        const EditarEnvioEntregaPage(),
+      ),
+      (
+        'Trocas e devoluções',
+        'Mantenha as condições de atendimento claras.',
+        const EditarTrocasDevolucoesPage(),
+      ),
+      (
+        'Política de privacidade',
+        'Revise a política publicada.',
+        const EditarPoliticaPage(),
+      ),
+    ];
+    return ListView(
+      padding: const EdgeInsets.all(24),
+      children: [
+        const AdminHeading(
+          'Conteúdo do site',
+          'Edite as informações da marca e as páginas de atendimento.',
         ),
-        icon: const Icon(Icons.add, color: Colors.white),
-      ),
+        ...pages.map(
+          (p) => Card(
+            child: ListTile(
+              contentPadding: const EdgeInsets.all(16),
+              title: Text(p.$1),
+              subtitle: Text(p.$2),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => p.$3)),
+            ),
+          ),
+        ),
+      ],
     );
   }
+}
 
-  // Novo Widget de Botão Largo
-  Widget _buildWideActionButton(
-    BuildContext context,
-    String label,
-    IconData icon,
-    Color cor,
-    Widget dest,
-    double width,
-  ) {
-    return InkWell(
-      onTap: () =>
-          Navigator.push(context, MaterialPageRoute(builder: (_) => dest)),
-      child: Container(
-        width: width,
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          color: cor,
-          borderRadius: BorderRadius.circular(
-            4,
-          ), // Bordas mais retas para parecerem "quase juntos"
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: Colors.white, size: 16),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-              ),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
+class _Settings extends StatelessWidget {
+  final String email;
+  const _Settings({required this.email});
+  @override
+  Widget build(BuildContext context) => ListView(
+    padding: const EdgeInsets.all(24),
+    children: [
+      const AdminHeading(
+        'Configurações',
+        'Contato comercial e informações da conta administradora.',
+      ),
+      Card(
+        child: ListTile(
+          contentPadding: const EdgeInsets.all(20),
+          leading: const Icon(Icons.contact_phone_outlined),
+          title: const Text('Contato e WhatsApp da loja'),
+          subtitle: const Text(
+            'Atualize os canais usados no rodapé e no atendimento dos pedidos.',
+          ),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const EditarContatoPage())),
         ),
       ),
-    );
-  }
-
-  Widget _buildProductCard(Product p) {
-    final bool temImagem = p.imageUrl != null && p.imageUrl!.isNotEmpty;
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 70,
-            decoration: BoxDecoration(
-              color: Colors.grey[50],
-              borderRadius: const BorderRadius.horizontal(
-                left: Radius.circular(8),
+      const SizedBox(height: 16),
+      Card(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Conta conectada',
+                style: TextStyle(fontWeight: FontWeight.bold),
               ),
-              image: temImagem
-                  ? DecorationImage(
-                      image: NetworkImage(p.imageUrl!),
-                      fit: BoxFit.cover,
-                    )
-                  : null,
-            ),
-            child: !temImagem
-                ? const Icon(Icons.image_outlined, color: Colors.grey, size: 20)
-                : null,
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    p.name,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 11,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Text(
-                    "R\$ ${p.price.toStringAsFixed(2)}",
-                    style: const TextStyle(
-                      color: TemaSite.corPrimaria,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 11,
-                    ),
-                  ),
-                ],
+              const SizedBox(height: 8),
+              SelectableText(email),
+              const Text('Permissão: administrador'),
+              const SizedBox(height: 20),
+              const Text(
+                'As vendas são confirmadas após verificar o pagamento recebido. Frete, contato e envio são gerenciados pelo atendimento.',
               ),
-            ),
+            ],
           ),
-          IconButton(
-            icon: const Icon(Icons.edit, color: Colors.blue, size: 16),
-            onPressed: () => _openForm(p),
-          ),
-          IconButton(
-            icon: const Icon(Icons.delete_outline, color: Colors.red, size: 16),
-            onPressed: () => _confirmDelete(p),
-          ),
-        ],
+        ),
       ),
-    );
-  }
-
-  Widget _buildHeaderSliver(String t) => SliverToBoxAdapter(
-    child: Padding(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 2),
-      child: Text(
-        t,
-        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-      ),
-    ),
+    ],
   );
-
-  Widget _buildFiltersSliver() => SliverToBoxAdapter(
-    child: SizedBox(
-      height: 36,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: _categorias.length,
-        itemBuilder: (c, i) => Padding(
-          padding: const EdgeInsets.only(right: 4),
-          child: ChoiceChip(
-            label: Text(_categorias[i], style: const TextStyle(fontSize: 10)),
-            selected: _categoriaSelecionada == _categorias[i],
-            selectedColor: TemaSite.corPrimaria.withOpacity(0.2),
-            onSelected: (v) =>
-                setState(() => _categoriaSelecionada = _categorias[i]),
-          ),
-        ),
-      ),
-    ),
-  );
-
-  Widget _buildSearchBarSliver() => SliverToBoxAdapter(
-    child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-      child: TextField(
-        onChanged: (v) => setState(() => _buscaQuery = v),
-        decoration: InputDecoration(
-          hintText: "Buscar produto...",
-          prefixIcon: const Icon(Icons.search, size: 16),
-          filled: true,
-          fillColor: const Color.fromARGB(255, 240, 240, 240),
-          contentPadding: EdgeInsets.zero,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(6),
-            borderSide: BorderSide.none,
-          ),
-        ),
-      ),
-    ),
-  );
-
-  void _openForm(Product? p) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: TemaAdmin.ContainerEight,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => ProductForm(
-        product: p,
-        onSave: (prod) async {
-          if (p == null) {
-            await ProductRepository.instance.addProduct(prod);
-          } else {
-            await ProductRepository.instance.updateProduct(prod);
-          }
-        },
-      ),
-    );
-  }
-
-  void _confirmDelete(Product p) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text("Excluir?"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text("Não"),
-          ),
-          TextButton(
-            onPressed: () async {
-              await ProductRepository.instance.deleteProduct(p.id);
-              if (mounted) Navigator.pop(ctx);
-            },
-            child: const Text(
-              "Sim",
-              style: TextStyle(color: TemaAdmin.onPrimary),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }

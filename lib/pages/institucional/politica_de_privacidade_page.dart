@@ -1,3 +1,4 @@
+import 'package:benta_lacos/core/config/store_environment.dart';
 import 'dart:convert';
 import 'package:benta_lacos/shared/sections/footer/rodape.dart';
 import 'package:benta_lacos/shared/sections/header/cabecalho.dart';
@@ -20,7 +21,7 @@ class PoliticaPrivacidadePage extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.all(20),
                 child: StreamBuilder<DocumentSnapshot>(
-                  stream: FirebaseFirestore.instance
+                  stream: StoreEnvironment.database
                       .collection('institucional')
                       .doc('politica')
                       .snapshots(),

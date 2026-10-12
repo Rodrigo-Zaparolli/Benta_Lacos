@@ -1,3 +1,4 @@
+import 'package:benta_lacos/core/config/store_environment.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -14,7 +15,7 @@ class CardsCategorias extends StatelessWidget {
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
       // Monitora a coleção de produtos para cálculos de estoque em tempo real
-      stream: FirebaseFirestore.instance.collection('produtos').snapshots(),
+      stream: StoreEnvironment.database.collection('produtos').snapshots(),
       builder: (context, snapshotProdutos) {
         // Mapa base para organizar os dados por categoria
         Map<String, Map<String, dynamic>> dados = {

@@ -1,3 +1,4 @@
+import 'package:benta_lacos/core/config/store_environment.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -36,7 +37,7 @@ class _DepoimentoFormState extends State<DepoimentoForm> {
 
     // 2. Plano B: Busca na sua coleção 'usuarios' do Firestore
     try {
-      final doc = await FirebaseFirestore.instance
+      final doc = await StoreEnvironment.database
           .collection('usuarios')
           .doc(user.uid)
           .get();
@@ -60,7 +61,7 @@ class _DepoimentoFormState extends State<DepoimentoForm> {
     try {
       final user = FirebaseAuth.instance.currentUser;
 
-      await FirebaseFirestore.instance.collection('depoimentos').add({
+      await StoreEnvironment.database.collection('depoimentos').add({
         'cliente': _nomeExibicao, // Usa o nome que encontramos
         'uid': user?.uid,
         'texto': _textoController.text,

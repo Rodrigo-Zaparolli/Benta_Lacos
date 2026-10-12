@@ -1,4 +1,11 @@
 # Miscellaneous
+/artifacts/
+/Benta_Lacos/
+*.pem
+*.p12
+.env
+.env.*
+*-service-account.json
 *.class
 *.log
 *.pyc
@@ -43,3 +50,21 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Local preview browser profiles
+artifacts/browser-profile/
+artifacts/chrome-preview/
+artifacts/preview-server.cjs
+artifacts/browser-check.cjs
+artifacts/analyze.log
+artifacts/admin-analyze.log
+artifacts/admin-tests.log
+artifacts/admin-browser-profile/
+artifacts/admin-build.log
+artifacts/admin-browser-check.cjs
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+artifacts/deploy-browser-profile/
+artifacts/deploy-browser-check.cjs
+artifacts/admin-deploy.log

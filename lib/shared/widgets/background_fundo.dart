@@ -7,16 +7,6 @@ class BackgroundFundo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        image: DecorationImage(
-          image: AssetImage("assets/imagens/tela_fundo/background.png"),
-          fit: BoxFit.cover,
-          repeat: ImageRepeat.repeat,
-          opacity: 0.85,
-        ),
-      ),
-      child: child,
-    );
+    return Container(color: const Color(0xFFFFFCF9), child: child);
   }
 }

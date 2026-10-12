@@ -1,3 +1,4 @@
+import 'package:benta_lacos/core/config/store_environment.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -45,7 +46,7 @@ class CardVisualizados extends StatelessWidget {
           const Divider(height: 20),
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
+              stream: StoreEnvironment.database
                   .collection(colecao)
                   .orderBy(campoOrdenacao, descending: true)
                   .limit(8)

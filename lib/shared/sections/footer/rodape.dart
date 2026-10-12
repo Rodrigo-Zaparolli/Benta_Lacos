@@ -1,4 +1,5 @@
-import 'package:benta_lacos/pages/cliente/login_page.dart';
+import 'package:benta_lacos/core/config/store_environment.dart';
+import '../../utils/store_format.dart';
 import 'package:benta_lacos/pages/cliente/minha_conta.dart';
 import 'package:benta_lacos/pages/institucional/nossa_historia_page.dart';
 import 'package:benta_lacos/pages/institucional/oque_faco_page.dart';
@@ -12,10 +13,8 @@ import '../../widgets/hover_link.dart';
 
 // --- IMPORTAÇÕES DAS PÁGINAS ---
 import 'package:benta_lacos/pages/institucional/duvidas_page.dart';
-
 import 'package:benta_lacos/pages/institucional/envio_entrega_page.dart';
-//import 'package:benta_lacos/pages/institucional/trocas_devolucoes_page.dart';
-import 'package:benta_lacos/pages/cliente/meus_pedidos_page.dart'; // ✅ Verifique se este é o caminho real
+import 'package:benta_lacos/pages/cliente/meus_pedidos_page.dart';
 
 class Rodape extends StatelessWidget {
   const Rodape({super.key});
@@ -28,11 +27,11 @@ class Rodape extends StatelessWidget {
   }
 
   Future<void> _launchWhatsApp(String phone) async {
-    final cleaned = phone.replaceAll(RegExp(r"[()\s-]"), "");
+    final cleaned = whatsappPhone(phone);
     final String message = Uri.encodeComponent(
       "Olá! Gostaria de falar sobre os produtos da Benta Laços.",
     );
-    await _abrirLink("https://wa.me/55$cleaned?text=$message");
+    await _abrirLink("https://wa.me/$cleaned?text=$message");
   }
 
   @override
@@ -42,7 +41,7 @@ class Rodape extends StatelessWidget {
     final isDesktop = screenWidth > 950;
 
     return StreamBuilder<DocumentSnapshot>(
-      stream: FirebaseFirestore.instance
+      stream: StoreEnvironment.database
           .collection('institucional')
           .doc('contato')
           .snapshots(),
@@ -71,6 +70,27 @@ class Rodape extends StatelessWidget {
                 child: isDesktop
                     ? _buildDesktopLayout(context, rodape, whatsapp, email)
                     : _buildMobileLayout(context, rodape, whatsapp, email),
+              ),
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 16,
+                children: [
+                  TextButton(
+                    onPressed: () =>
+                        Navigator.pushNamed(context, '/envio-entrega'),
+                    child: const Text('Envio e entrega'),
+                  ),
+                  TextButton(
+                    onPressed: () =>
+                        Navigator.pushNamed(context, '/trocas-devolucoes'),
+                    child: const Text('Trocas e devoluções'),
+                  ),
+                  TextButton(
+                    onPressed: () =>
+                        Navigator.pushNamed(context, '/politica-privacidade'),
+                    child: const Text('Privacidade'),
+                  ),
+                ],
               ),
               _buildCopyright(rodape),
             ],
@@ -130,8 +150,6 @@ class Rodape extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 15),
-                  _buildPaymentIcons(),
                 ],
               ),
             ),
@@ -147,14 +165,12 @@ class Rodape extends StatelessWidget {
                   );
                 }, rodape),
                 _link("Quem Sou", () {
-                  // ✅ Ajuste para o nome da classe correto no seu arquivo de entregas
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const QuemSouPage()),
                   );
                 }, rodape),
-                _link("Oque Faço", () {
-                  // ✅ Ajuste para o nome da classe correto no seu arquivo de entregas
+                _link("O que faço", () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const OQueFacoPage()),
@@ -166,34 +182,23 @@ class Rodape extends StatelessWidget {
               flex: 2,
               child: _buildLinkColumn("Atendimento", [
                 _link("Minha Conta", () {
-                  // ✅ Se não houver login, manda para LoginPage ou PerfilPage
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const MinhaContaPage()),
                   );
                 }, rodape),
                 _link("Meus Pedidos", () {
-                  // ✅ NAVEGAÇÃO DIRETA (Troquei pushNamed por MaterialPageRoute)
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const MeusPedidosPage()),
                   );
                 }, rodape),
                 _link("Entregas", () {
-                  // ✅ Ajuste para o nome da classe correto no seu arquivo de entregas
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const EnvioEntregaPage()),
                   );
                 }, rodape),
-                /* _link("Trocas", () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const TrocasDevolucoesPage(),
-                    ),
-                  );
-                }, rodape),*/
                 _link("Dúvidas", () {
                   Navigator.push(
                     context,
@@ -208,7 +213,6 @@ class Rodape extends StatelessWidget {
                 children: [
                   _buildContactCard(rodape, whatsapp, email),
                   const SizedBox(height: 20),
-                  _buildTrackingInput(rodape),
                 ],
               ),
             ),
@@ -219,6 +223,9 @@ class Rodape extends StatelessWidget {
   }
 
   Widget _buildContactCard(ConfigRodape rodape, String whatsapp, String email) {
+    final String whatsappFixo = whatsapp;
+    final String emailFixo = email;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(15),
@@ -234,26 +241,25 @@ class Rodape extends StatelessWidget {
             style: rodape.headerStyle(fontSize: 14),
           ),
           const SizedBox(height: 10),
-          _contactTile(
+
+          _contactTileFa(
             FontAwesomeIcons.whatsapp,
-            whatsapp,
-            () => _launchWhatsApp(whatsapp),
+            whatsappFixo,
+            () => _launchWhatsApp(whatsappFixo),
             Colors.green,
           ),
           const SizedBox(height: 8),
-          // ✅ E-mail agora dinâmico do Firebase
-          _contactTile(
+
+          _contactTileMaterial(
             Icons.mail_outline,
-            email,
-            () => _abrirLink("mailto:$email"),
+            emailFixo,
+            () => _abrirLink("mailto:$emailFixo"),
             rodape.headerCor,
           ),
         ],
       ),
     );
   }
-
-  // --- MÉTODOS AUXILIARES ---
 
   Widget _buildLinkColumn(
     String title,
@@ -287,7 +293,42 @@ class Rodape extends StatelessWidget {
     );
   }
 
-  Widget _contactTile(
+  Widget _contactTileFa(
+    dynamic icon,
+    String label,
+    VoidCallback onTap,
+    Color color,
+  ) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            FaIcon(icon, size: 12, color: color),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _contactTileMaterial(
     IconData icon,
     String label,
     VoidCallback onTap,
@@ -322,67 +363,16 @@ class Rodape extends StatelessWidget {
     );
   }
 
-  Widget _socialIcon(IconData icon, String url, ConfigRodape rodape) {
+  Widget _socialIcon(dynamic icon, String url, ConfigRodape rodape) {
     return InkWell(
       onTap: () => _abrirLink(url),
       child: Container(
         padding: const EdgeInsets.all(6),
-        decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-        child: Icon(icon, size: 14, color: rodape.headerCor),
-      ),
-    );
-  }
-
-  Widget _buildPaymentIcons() {
-    return Row(
-      children: [
-        Icon(FontAwesomeIcons.ccVisa, size: 24, color: Colors.blue[900]),
-        const SizedBox(width: 10),
-        Icon(
-          FontAwesomeIcons.ccMastercard,
-          size: 24,
-          color: Colors.orange[800],
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
         ),
-        const SizedBox(width: 10),
-        Icon(FontAwesomeIcons.pix, size: 20, color: Colors.teal),
-      ],
-    );
-  }
-
-  Widget _buildTrackingInput(ConfigRodape rodape) {
-    return Container(
-      height: 42,
-      padding: const EdgeInsets.symmetric(horizontal: 5),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(25),
-        border: Border.all(color: rodape.headerCor.withOpacity(0.1)),
-      ),
-      child: Row(
-        children: [
-          const SizedBox(width: 15),
-          Icon(
-            FontAwesomeIcons.truck,
-            size: 12,
-            color: rodape.headerCor.withOpacity(0.3),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: "Rastrear pedido...",
-                hintStyle: rodape.bodyStyle(fontSize: 12, color: Colors.grey),
-                border: InputBorder.none,
-                isDense: true,
-              ),
-            ),
-          ),
-          CircleAvatar(
-            radius: 16,
-            backgroundColor: rodape.headerCor,
-            child: const Icon(Icons.search, color: Colors.white, size: 14),
-          ),
-        ],
+        child: FaIcon(icon, size: 14, color: rodape.headerCor),
       ),
     );
   }
@@ -393,7 +383,7 @@ class Rodape extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 20, top: 10),
       alignment: Alignment.center,
       child: Text(
-        "© 2025 Benta Laços. Feito com amor em cada ponto.",
+        "© ${DateTime.now().year} Benta Laços. Feito com amor em cada ponto.",
         style: rodape.bodyStyle(
           fontSize: 11,
           color: rodape.textoCor.withOpacity(0.5),
@@ -412,7 +402,6 @@ class Rodape extends StatelessWidget {
       children: [
         Text("Benta Laços", style: rodape.headerStyle(fontSize: 22)),
         const SizedBox(height: 15),
-        _buildTrackingInput(rodape),
         const SizedBox(height: 20),
         _buildContactCard(rodape, whatsapp, email),
       ],

@@ -1,3 +1,4 @@
+import 'package:benta_lacos/core/config/store_environment.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -14,7 +15,7 @@ class MinhaContaPage extends StatefulWidget {
 
 class _MinhaContaPageState extends State<MinhaContaPage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseFirestore _firestore = StoreEnvironment.database;
 
   // Controllers para todos os campos
   final TextEditingController _nomeController = TextEditingController();

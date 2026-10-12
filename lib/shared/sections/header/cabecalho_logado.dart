@@ -1,3 +1,4 @@
+import 'package:benta_lacos/core/config/store_environment.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -32,7 +33,7 @@ class _CabecalhoLogadoState extends State<CabecalhoLogado> {
 
       if (user != null) {
         // Acessa a coleção 'usuarios' e o documento com o ID do usuário (UID)
-        final DocumentSnapshot doc = await FirebaseFirestore.instance
+        final DocumentSnapshot doc = await StoreEnvironment.database
             .collection('usuarios')
             .doc(user.uid)
             .get();

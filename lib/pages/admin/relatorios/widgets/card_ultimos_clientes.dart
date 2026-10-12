@@ -1,3 +1,4 @@
+import 'package:benta_lacos/core/config/store_environment.dart';
 import 'package:benta_lacos/core/pdf/clientes_pdf.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -9,7 +10,7 @@ class UltimosClientes extends StatelessWidget {
   Future<void> _exportarTodosClientes(BuildContext context) async {
     try {
       // Busca a base completa sem o limite de 12 itens do widget
-      final queryAll = await FirebaseFirestore.instance
+      final queryAll = await StoreEnvironment.database
           .collection('usuarios')
           .orderBy('dataCriacao', descending: true)
           .get();
@@ -43,7 +44,7 @@ class UltimosClientes extends StatelessWidget {
       // Adiciona o ícone de PDF no topo do card
       onPdfPressed: () => _exportarTodosClientes(context),
       child: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
+        stream: StoreEnvironment.database
             .collection('usuarios')
             .orderBy('dataCriacao', descending: true)
             .limit(12)

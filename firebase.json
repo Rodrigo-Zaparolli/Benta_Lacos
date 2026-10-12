@@ -1,1 +1,145 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"benta-lacos","appId":"1:367308357028:android:f229effdbde52c73f55531","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"benta-lacos","configurations":{"android":"1:367308357028:android:f229effdbde52c73f55531","ios":"1:367308357028:ios:8e0077c5a27f7bcbf55531","macos":"1:367308357028:ios:8e0077c5a27f7bcbf55531","web":"1:367308357028:web:f43c0d18cd2427fcf55531","windows":"1:367308357028:web:e081ef2690dcc372f55531"}}}}}}
+﻿{
+    "flutter":  {
+                    "platforms":  {
+                                      "android":  {
+                                                      "default":  {
+                                                                      "projectId":  "benta-lacos",
+                                                                      "appId":  "1:367308357028:android:f229effdbde52c73f55531",
+                                                                      "fileOutput":  "android/app/google-services.json"
+                                                                  }
+                                                  },
+                                      "dart":  {
+                                                   "lib/firebase_options.dart":  {
+                                                                                     "projectId":  "benta-lacos",
+                                                                                     "configurations":  {
+                                                                                                            "android":  "1:367308357028:android:f229effdbde52c73f55531",
+                                                                                                            "ios":  "1:367308357028:ios:8e0077c5a27f7bcbf55531",
+                                                                                                            "macos":  "1:367308357028:ios:8e0077c5a27f7bcbf55531",
+                                                                                                            "web":  "1:367308357028:web:f43c0d18cd2427fcf55531",
+                                                                                                            "windows":  "1:367308357028:web:e081ef2690dcc372f55531"
+                                                                                                        }
+                                                                                 }
+                                               }
+                                  }
+                },
+    "firestore":  [
+                      {
+                          "database":  "(default)",
+                          "rules":  "firestore.rules",
+                          "indexes":  "firestore.indexes.json"
+                      },
+                      {
+                          "database":  "benta-teste",
+                          "rules":  "firestore.rules",
+                          "indexes":  "firestore.indexes.json"
+                      }
+                  ],
+    "hosting":  [
+                    {
+                        "site":  "benta-lacos",
+                        "public":  "build/web",
+                        "ignore":  [
+                                       "firebase.json",
+                                       "**/.*",
+                                       "**/node_modules/**"
+                                   ],
+                        "rewrites":  [
+                                         {
+                                             "destination":  "/index.html",
+                                             "source":  "**"
+                                         }
+                                     ],
+                        "headers":  [
+                                        {
+                                            "headers":  [
+                                                            {
+                                                                "key":  "Cache-Control",
+                                                                "value":  "no-cache"
+                                                            }
+                                                        ],
+                                            "source":  "/index.html"
+                                        },
+                                        {
+                                            "headers":  [
+                                                            {
+                                                                "key":  "Cache-Control",
+                                                                "value":  "no-cache"
+                                                            }
+                                                        ],
+                                            "source":  "/flutter_bootstrap.js"
+                                        },
+                                        {
+                                            "headers":  [
+                                                            {
+                                                                "key":  "Cache-Control",
+                                                                "value":  "no-cache"
+                                                            }
+                                                        ],
+                                            "source":  "/flutter_service_worker.js"
+                                        },
+                                        {
+                                            "source":  "/main.dart.js",
+                                            "headers":  [
+                                                            {
+                                                                "key":  "Cache-Control",
+                                                                "value":  "no-cache"
+                                                            }
+                                                        ]
+                                        }
+                                    ]
+                    },
+                    {
+                        "site":  "benta-lacos-teste",
+                        "public":  "build/web-test",
+                        "ignore":  [
+                                       "firebase.json",
+                                       "**/.*",
+                                       "**/node_modules/**"
+                                   ],
+                        "rewrites":  [
+                                         {
+                                             "destination":  "/index.html",
+                                             "source":  "**"
+                                         }
+                                     ],
+                        "headers":  [
+                                        {
+                                            "headers":  [
+                                                            {
+                                                                "key":  "Cache-Control",
+                                                                "value":  "no-cache"
+                                                            }
+                                                        ],
+                                            "source":  "/index.html"
+                                        },
+                                        {
+                                            "headers":  [
+                                                            {
+                                                                "key":  "Cache-Control",
+                                                                "value":  "no-cache"
+                                                            }
+                                                        ],
+                                            "source":  "/flutter_bootstrap.js"
+                                        },
+                                        {
+                                            "headers":  [
+                                                            {
+                                                                "key":  "Cache-Control",
+                                                                "value":  "no-cache"
+                                                            }
+                                                        ],
+                                            "source":  "/flutter_service_worker.js"
+                                        },
+                                        {
+                                            "source":  "/main.dart.js",
+                                            "headers":  [
+                                                            {
+                                                                "key":  "Cache-Control",
+                                                                "value":  "no-cache"
+                                                            }
+                                                        ]
+                                        }
+                                    ]
+                    }
+                ]
+}

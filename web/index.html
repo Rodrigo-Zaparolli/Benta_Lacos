@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 
 <head>
   <!--
@@ -19,22 +19,43 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="description" content="Laços e acessórios infantis feitos à mão. Conheça a coleção Benta Laços e faça seu pedido com atendimento pelo WhatsApp.">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="benta_lacos">
+  <meta name="apple-mobile-web-app-title" content="Benta Laços">
   <link rel="apple-touch-icon" href="icons/logo-192.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png" />
 
-  <title>benta_lacos</title>
+  <title>Benta Laços | Acessórios infantis feitos à mão</title>
+  <meta name="theme-color" content="#B73564">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="pt_BR">
+  <meta property="og:site_name" content="Benta Laços">
+  <meta property="og:title" content="Benta Laços | Acessórios infantis feitos à mão">
+  <meta property="og:description" content="Carinho em cada detalhe. Conheça nossos laços e acessórios infantis feitos à mão.">
+  <meta property="og:image" content="share-banner.jpeg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Benta Laços | Acessórios infantis feitos à mão">
+  <meta name="twitter:description" content="Conheça nossa coleção de laços e acessórios infantis feitos à mão.">
+  <meta name="twitter:image" content="share-banner.jpeg">
   <link rel="manifest" href="manifest.json">
 </head>
 
 <body>
+  <div id="startup" role="status" aria-live="polite" style="position:fixed;inset:0;display:grid;place-content:center;text-align:center;background:#FFFCF9;color:#5D4037;font:16px Arial,sans-serif;z-index:10;padding:24px">
+    <img src="icons/logo-192.png" alt="Benta Laços" width="96" height="96" style="margin:0 auto 20px">
+    <p>Preparando nossa coleção para você...</p>
+    <button id="startup-retry" hidden onclick="location.reload()" style="padding:12px 20px;background:#B73564;color:white;border:0;border-radius:8px;cursor:pointer">Tentar novamente</button>
+  </div>
+  <noscript>Ative o JavaScript para conhecer a coleção Benta Laços. Atendimento: contatobentalacos@gmail.com.</noscript>
+  <script>
+    window.addEventListener('flutter-first-frame', () => document.getElementById('startup')?.remove(), { once: true });
+    setTimeout(() => { const button = document.getElementById('startup-retry'); if (button) button.hidden = false; }, 20000);
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 

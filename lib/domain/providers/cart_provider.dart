@@ -1,3 +1,5 @@
+import 'package:benta_lacos/core/config/store_environment.dart';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -31,8 +33,29 @@ class CartItem {
 
 class CartProvider with ChangeNotifier {
   final List<CartItem> _items = [];
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseFirestore _firestore = StoreEnvironment.database;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  String? _ownerUid;
+  Future<void>? _syncing;
+  StreamSubscription<User?>? _authSubscription;
+
+  CartProvider() {
+    _authSubscription = _auth.authStateChanges().listen((user) {
+      if (user != null) {
+        sincronizarDoFirestore(user.uid);
+      } else if (_ownerUid != null) {
+        _ownerUid = null;
+        clear();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _authSubscription?.cancel();
+    super.dispose();
+  }
 
   List<CartItem> get items => [..._items];
 
@@ -88,41 +111,51 @@ class CartProvider with ChangeNotifier {
     }
   }
 
-  Future<void> sincronizarDoFirestore(String uid) async {
-    try {
-      _items.clear();
+  Future<void> sincronizarDoFirestore(String uid) {
+    return _syncing ??= _loadCart(uid).whenComplete(() => _syncing = null);
+  }
 
+  Future<void> _loadCart(String uid) async {
+    try {
       final cartSnapshot = await _firestore
           .collection('usuarios')
           .doc(uid)
           .collection('carrinho')
           .get();
-
-      for (var doc in cartSnapshot.docs) {
-        final data = doc.data();
-
-        // ✅ USANDO fromMap (mais limpo agora)
-        _items.add(CartItem.fromMap(data, doc.id));
-      }
-
       final favSnapshot = await _firestore
           .collection('usuarios')
           .doc(uid)
           .collection('favoritos')
           .get();
-
-      for (var doc in favSnapshot.docs) {
-        final data = doc.data();
-        bool jaExiste = _items.any((item) => item.product.id == doc.id);
-
-        if (!jaExiste) {
-          _items.add(CartItem.fromMap(data, doc.id));
+      if (_auth.currentUser?.uid != uid) return;
+      final merged = <String, CartItem>{};
+      for (final doc in favSnapshot.docs) {
+        merged[doc.id] = CartItem.fromMap(doc.data(), doc.id);
+      }
+      for (final doc in cartSnapshot.docs) {
+        merged[doc.id] = CartItem.fromMap(doc.data(), doc.id);
+      }
+      if (_ownerUid == null) {
+        for (final local in _items) {
+          final remote = merged[local.product.id];
+          merged[local.product.id] = CartItem(
+            product: local.product,
+            quantity: local.quantity + (remote?.quantity ?? 0),
+            selecionado: local.selecionado,
+          );
         }
       }
-
+      _ownerUid = uid;
+      _items.clear();
+      _items.addAll(merged.values);
       notifyListeners();
-    } catch (e) {
-      debugPrint("Erro ao sincronizar: $e");
+      for (final item in _items.toList()) {
+        await _atualizarNoFirestore(item);
+      }
+    } catch (error) {
+      debugPrint(
+        'Não foi possível sincronizar o carrinho: ' + error.toString(),
+      );
     }
   }
 
@@ -214,13 +247,16 @@ class CartProvider with ChangeNotifier {
   Future<void> _atualizarNoFirestore(CartItem item) async {
     final user = _auth.currentUser;
     if (user == null) return;
-
-    await _firestore
-        .collection('usuarios')
-        .doc(user.uid)
-        .collection('carrinho')
-        .doc(item.product.id)
-        .set(item.toMap()); // ✅ PADRONIZADO
+    try {
+      await _firestore
+          .collection('usuarios')
+          .doc(user.uid)
+          .collection('carrinho')
+          .doc(item.product.id)
+          .set(item.toMap());
+    } catch (error) {
+      debugPrint('Não foi possível salvar o carrinho: ' + error.toString());
+    }
   }
 
   void removeItem(String id) {

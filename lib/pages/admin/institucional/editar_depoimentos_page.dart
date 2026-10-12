@@ -1,219 +1,181 @@
+import 'package:benta_lacos/core/config/store_environment.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../../../shared/theme/tema_site.dart'; // Ajustado para sua nova estrutura
+import '../../../domain/services/admin_audit.dart';
+import '../widgets/admin_ui.dart';
+import '../widgets/admin_actions.dart';
 
-class GestaoDepoimentosPage extends StatelessWidget {
+class GestaoDepoimentosPage extends StatefulWidget {
   const GestaoDepoimentosPage({super.key});
-
   @override
-  Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        backgroundColor: const Color(0xFFF8F9FA),
-        appBar: AppBar(
-          title: const Text("Gestão de Depoimentos"),
-          backgroundColor: TemaAdmin.corAdminEditor,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.pop(context),
-          ),
-          bottom: const TabBar(
-            indicatorColor: TemaAdmin.Primary,
-            tabs: [
-              Tab(icon: Icon(Icons.pending_actions), text: "PENDENTES"),
-              Tab(icon: Icon(Icons.check_circle_outline), text: "APROVADOS"),
-            ],
-          ),
-        ),
-        body: TabBarView(
-          children: [
-            _buildListaDepoimentos(aprovados: false), // Aba Pendentes
-            _buildListaDepoimentos(aprovados: true), // Aba Aprovados
-          ],
-        ),
-      ),
-    );
+  State<GestaoDepoimentosPage> createState() => _GestaoDepoimentosPageState();
+}
+
+class _GestaoDepoimentosPageState extends State<GestaoDepoimentosPage> {
+  late Stream<QuerySnapshot<Map<String, dynamic>>> _stream;
+  String _filter = 'Pendentes';
+  final _busy = <String>{};
+  @override
+  void initState() {
+    super.initState();
+    _reload();
   }
 
-  Widget _buildListaDepoimentos({required bool aprovados}) {
-    return StreamBuilder<QuerySnapshot>(
-      // Filtra os depoimentos com base no status de aprovação
-      stream: FirebaseFirestore.instance
-          .collection('depoimentos')
-          .where('aprovado', isEqualTo: aprovados)
-          .snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return Center(child: Text("Erro ao carregar: ${snapshot.error}"));
-        }
-
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        final docs = snapshot.data?.docs ?? [];
-
-        if (docs.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  aprovados ? Icons.chat_bubble_outline : Icons.done_all,
-                  size: 60,
-                  color: Colors.grey,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  aprovados
-                      ? "Nenhum depoimento aprovado ainda."
-                      : "Tudo limpo! Nenhum depoimento pendente.",
-                  style: const TextStyle(color: Colors.grey, fontSize: 16),
-                ),
-              ],
+  void _reload() =>
+      _stream = StoreEnvironment.database.collection('depoimentos').snapshots();
+  Future<void> _change(String id, {bool? approved, bool? archived}) async {
+    if (_busy.contains(id)) return;
+    if (archived == true &&
+        !await adminConfirm(
+          context,
+          'Arquivar depoimento?',
+          'O depoimento sairá do site e poderá ser restaurado.',
+        ))
+      return;
+    setState(() => _busy.add(id));
+    try {
+      final ref = StoreEnvironment.database.collection('depoimentos').doc(id);
+      await StoreEnvironment.database.runTransaction((t) async {
+        final doc = await t.get(ref);
+        if (!doc.exists) throw StateError('Depoimento não encontrado.');
+        t.update(ref, {
+          if (approved != null) 'aprovado': approved,
+          if (archived != null) 'arquivado': archived,
+          if (archived == true) 'aprovado': false,
+          'updatedAt': FieldValue.serverTimestamp(),
+          'historico': FieldValue.arrayUnion([
+            auditEntry(
+              archived == true
+                  ? 'Depoimento arquivado'
+                  : archived == false
+                  ? 'Depoimento restaurado'
+                  : approved == true
+                  ? 'Depoimento aprovado'
+                  : 'Aprovação retirada',
             ),
-          );
-        }
+          ]),
+        });
+      });
+      if (mounted) adminMessage(context, 'Depoimento atualizado.');
+    } catch (_) {
+      if (mounted)
+        adminMessage(
+          context,
+          'Não foi possível atualizar o depoimento. Tente novamente.',
+        );
+    } finally {
+      if (mounted) setState(() => _busy.remove(id));
+    }
+  }
 
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: docs.length,
-          itemBuilder: (context, index) {
-            final data = docs[index].data() as Map<String, dynamic>;
-            final String id = docs[index].id;
-
-            return Card(
-              elevation: 2,
-              margin: const EdgeInsets.only(bottom: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('Depoimentos')),
+    body: ListView(
+      padding: const EdgeInsets.all(24),
+      children: [
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: ['Pendentes', 'Aprovados', 'Arquivados']
+              .map(
+                (v) => ChoiceChip(
+                  label: Text(v),
+                  selected: _filter == v,
+                  onSelected: (_) => setState(() => _filter = v),
+                ),
+              )
+              .toList(),
+        ),
+        const SizedBox(height: 20),
+        StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+          stream: _stream,
+          builder: (context, s) {
+            if (s.hasError)
+              return AdminEmpty(
+                'Não foi possível carregar os depoimentos.',
+                retry: () => setState(_reload),
+              );
+            if (!s.hasData)
+              return const Center(child: CircularProgressIndicator());
+            final docs = s.data!.docs.where((d) {
+              final o = d.data();
+              return _filter == 'Arquivados'
+                  ? o['arquivado'] == true
+                  : o['arquivado'] != true &&
+                        (o['aprovado'] == true) == (_filter == 'Aprovados');
+            }).toList();
+            if (docs.isEmpty)
+              return const AdminEmpty('Nenhum depoimento nesta seleção.');
+            return Column(
+              children: docs.map((d) {
+                final o = d.data();
+                return Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          data['cliente'] ?? "Anônimo",
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
+                          '${o['cliente'] ?? 'Cliente'}',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
-                        _buildStatusBadge(aprovados),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      data['texto'] ?? "Sem conteúdo",
-                      style: const TextStyle(color: Colors.black87),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        // Estrelas
-                        Row(
-                          children: List.generate(
-                            5,
-                            (i) => Icon(
-                              Icons.star,
-                              size: 18,
-                              color: i < (data['estrelas'] ?? 0)
-                                  ? Colors.amber
-                                  : Colors.grey[300],
-                            ),
-                          ),
-                        ),
-                        // Botões de Ação
-                        Row(
+                        const SizedBox(height: 8),
+                        Text('${o['texto'] ?? ''}'),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 12,
+                          runSpacing: 8,
+                          crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
-                            if (!aprovados) // Se estiver pendente, mostra o check de aprovação
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.check_circle,
-                                  color: Colors.green,
+                            Text('${o['estrelas'] ?? 0}/5 estrelas'),
+                            if (_busy.contains(d.id))
+                              const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
                                 ),
-                                tooltip: 'Aprovar',
-                                onPressed: () => _alterarStatus(id, true),
                               ),
-                            IconButton(
-                              icon: const Icon(
-                                Icons.delete_outline,
-                                color: Colors.redAccent,
+                            if (_filter == 'Arquivados')
+                              OutlinedButton(
+                                onPressed: _busy.contains(d.id)
+                                    ? null
+                                    : () => _change(d.id, archived: false),
+                                child: const Text('Restaurar como pendente'),
+                              )
+                            else ...[
+                              OutlinedButton(
+                                onPressed: _busy.contains(d.id)
+                                    ? null
+                                    : () => _change(
+                                        d.id,
+                                        approved: o['aprovado'] != true,
+                                      ),
+                                child: Text(
+                                  o['aprovado'] == true
+                                      ? 'Retirar aprovação'
+                                      : 'Aprovar',
+                                ),
                               ),
-                              tooltip: 'Excluir',
-                              onPressed: () => _confirmarExclusao(context, id),
-                            ),
+                              TextButton(
+                                onPressed: _busy.contains(d.id)
+                                    ? null
+                                    : () => _change(d.id, archived: true),
+                                child: const Text('Arquivar'),
+                              ),
+                            ],
                           ],
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              }).toList(),
             );
           },
-        );
-      },
-    );
-  }
-
-  Widget _buildStatusBadge(bool aprovado) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: aprovado
-            ? Colors.green.withOpacity(0.1)
-            : Colors.orange.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        aprovado ? "APROVADO" : "AGUARDANDO",
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
-          color: aprovado ? Colors.green : Colors.orange,
         ),
-      ),
-    );
-  }
-
-  void _alterarStatus(String id, bool status) {
-    FirebaseFirestore.instance.collection('depoimentos').doc(id).update({
-      'aprovado': status,
-    });
-  }
-
-  void _confirmarExclusao(BuildContext context, String id) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text("Remover Depoimento?"),
-        content: const Text(
-          "Isso removerá permanentemente o depoimento do banco de dados.",
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text("Cancelar"),
-          ),
-          TextButton(
-            onPressed: () {
-              FirebaseFirestore.instance
-                  .collection('depoimentos')
-                  .doc(id)
-                  .delete();
-              Navigator.pop(ctx);
-            },
-            child: const Text("Remover", style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-  }
+      ],
+    ),
+  );
 }

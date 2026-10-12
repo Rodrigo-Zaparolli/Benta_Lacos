@@ -1,3 +1,4 @@
+import 'package:benta_lacos/core/config/store_environment.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../shared/sections/header/cabecalho.dart';
@@ -21,7 +22,7 @@ class QuemSouPage extends StatelessWidget {
                   vertical: 60,
                 ),
                 child: StreamBuilder<DocumentSnapshot>(
-                  stream: FirebaseFirestore.instance
+                  stream: StoreEnvironment.database
                       .collection('institucional')
                       .doc('quem_sou')
                       .snapshots(),

@@ -1,7 +1,10 @@
+import 'package:benta_lacos/core/config/store_environment.dart';
+import '../../shared/utils/store_format.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import '../../domain/services/order_messages.dart';
 
 import '../../../domain/services/pdf_service_cliente.dart';
 import '../../shared/sections/header/cabecalho.dart';
@@ -51,7 +54,7 @@ class MeusPedidosPage extends StatelessWidget {
                         )
                       else
                         StreamBuilder<QuerySnapshot>(
-                          stream: FirebaseFirestore.instance
+                          stream: StoreEnvironment.database
                               .collection('pedidos')
                               .where('clienteId', isEqualTo: user.uid)
                               .orderBy('dataPedido', descending: true)
@@ -161,7 +164,11 @@ class _OrderCard extends StatelessWidget {
       nomeCliente: pedido['nomeCliente'] ?? 'Cliente',
       itens: pedido['itens'] as List? ?? [],
       total: (pedido['total'] as num? ?? 0).toDouble(),
-      frete: (pedido['frete'] as num? ?? 0).toDouble(),
+      frete: (pedido['valorFrete'] as num? ?? pedido['frete'] as num? ?? 0)
+          .toDouble(),
+      freteACombinar: pedido['freteACombinar'] == true,
+      status:
+          '${pedido['pedidoTeste'] == true ? 'Teste — ' : ''}${pedido['status'] ?? 'Pendente'}',
       metodoPagamento: pedido['metodoPagamento'] ?? 'Não informado',
       enderecoCompleto: pedido['enderecoExibicao'] ?? 'Endereço não informado',
       dataPedido: Timestamp.fromDate(dataPedido), // 🔥 GARANTIDO
@@ -174,6 +181,8 @@ class _OrderCard extends StatelessWidget {
         return Colors.green;
       case 'cancelado':
         return Colors.red;
+      case 'aceito':
+      case 'fabricado':
       case 'enviado':
         return Colors.blue;
       default:
@@ -197,14 +206,22 @@ class _OrderCard extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ExpansionTile(
         leading: Icon(Icons.shopping_basket, color: statusColor),
-        title: Text('Pedido #${pedidoId.substring(0, 8).toUpperCase()}'),
-        subtitle: Text('Data: $dataFormatada'),
+        title: Text(
+          '${pedido['pedidoTeste'] == true ? 'Pedido de teste' : 'Pedido'} #${pedidoId.substring(0, 8).toUpperCase()}',
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Data: $dataFormatada'),
+            Text(customerOrderProgress(pedido)),
+          ],
+        ),
         trailing: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
-              'R\$ ${total.toStringAsFixed(2)}',
+              '${formatMoney(total)}',
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 color: Colors.brown,
@@ -222,6 +239,28 @@ class _OrderCard extends StatelessWidget {
         ),
         children: [
           const Divider(),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text(customerOrderProgress(pedido)),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              'Pagamento: ${pedido['pagamentoConfirmado'] != null || pedido['pagamentoLegado'] == true ? 'Confirmado' : 'Aguardando confirmação'}',
+            ),
+          ),
+          if (pedido['previsaoConclusao'] is Timestamp)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                'Previsão de conclusão: ${DateFormat('dd/MM/yyyy').format((pedido['previsaoConclusao'] as Timestamp).toDate())}',
+              ),
+            ),
+          if ('${pedido['instrucoesEntrega'] ?? ''}'.trim().isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text('${pedido['instrucoesEntrega']}'),
+            ),
 
           Padding(
             padding: const EdgeInsets.all(16),
@@ -252,6 +291,11 @@ class _OrderCard extends StatelessWidget {
                 ),
 
                 const SizedBox(height: 10),
+                Text(
+                  pedido['freteACombinar'] == true
+                      ? 'Frete e prazo a combinar com o atendimento. Valor acima é o subtotal.'
+                      : 'Frete: ${formatMoney(pedido['valorFrete'] as num? ?? 0)}',
+                ),
 
                 ...(pedido['itens'] as List? ?? []).map((item) {
                   final double totalItem =
@@ -262,7 +306,7 @@ class _OrderCard extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(vertical: 2),
                     child: Text(
                       '${item['quantidade']}x ${item['nome']} - '
-                      'R\$ ${totalItem.toStringAsFixed(2)}',
+                      '${formatMoney(totalItem)}',
                       style: const TextStyle(fontSize: 13),
                     ),
                   );

@@ -1,3 +1,4 @@
+import 'package:benta_lacos/core/config/store_environment.dart';
 import 'package:benta_lacos/pages/admin/login/admin_page.dart';
 import 'package:benta_lacos/pages/home/home_page.dart';
 import 'package:benta_lacos/pages/cliente/login_page.dart';
@@ -25,7 +26,7 @@ class RootDecider extends StatelessWidget {
         // [AJUSTE]: Se o usuário está logado, agora usamos um FutureBuilder para checar o 'tipo' no Firestore
         if (snapshot.hasData && snapshot.data != null) {
           return FutureBuilder<DocumentSnapshot>(
-            future: FirebaseFirestore.instance
+            future: StoreEnvironment.database
                 .collection('usuarios') // Nome da sua coleção no Firebase
                 .doc(snapshot.data!.uid)
                 .get(),

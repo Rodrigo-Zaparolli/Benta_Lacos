@@ -1,308 +1,247 @@
-import 'dart:html' as html; // Necessário para Web (Chrome)
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:benta_lacos/core/config/store_environment.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
-
-// Imports internos
-import 'package:benta_lacos/domain/providers/cart_provider.dart';
-import 'package:benta_lacos/pages/cliente/cart/cart_screen.dart';
-import 'package:benta_lacos/pages/cliente/categoria_page.dart';
-import 'package:benta_lacos/pages/home/home_page.dart';
+import '../../../domain/providers/cart_provider.dart';
+import '../../../pages/cliente/cart/cart_screen.dart';
 import '../../theme/tema_site.dart';
-import 'cabecalho_logado.dart';
-import 'cabecalho_deslogado.dart';
 
 class Cabecalho extends StatefulWidget {
   const Cabecalho({super.key});
-
   @override
   State<Cabecalho> createState() => _CabecalhoState();
 }
 
 class _CabecalhoState extends State<Cabecalho> {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final TextEditingController _searchController = TextEditingController();
-
-  void _abrirPainelAdmin() {
-    if (kIsWeb) {
-      // Abre o painel admin em uma nova aba no Chrome
-      html.window.open('/admin', '_blank');
-    } else {
-      Navigator.pushNamed(context, '/admin');
-    }
-  }
-
-  void _realizarBusca(String termo) {
-    if (termo.trim().isEmpty) return;
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => CategoriaPage(
-          categoriaNome: termo.trim().toLowerCase(),
-          isBusca: true,
-        ),
-      ),
-    );
-    _searchController.clear();
-  }
-
-  void _abrirCarrinhoLateral(BuildContext context) {
-    showGeneralDialog(
-      context: context,
-      barrierDismissible: true,
-      barrierLabel: 'Carrinho',
-      barrierColor: Colors.black.withOpacity(0.5),
-      transitionDuration: const Duration(milliseconds: 300),
-      pageBuilder: (_, __, ___) {
-        return Align(
-          alignment: Alignment.centerRight,
-          child: Material(
-            elevation: 16,
-            child: Container(
-              width: MediaQuery.of(context).size.width > 600
-                  ? 450
-                  : MediaQuery.of(context).size.width * 0.85,
-              height: double.infinity,
-              color: Colors.white,
-              child: const CartScreen(),
-            ),
-          ),
-        );
-      },
-      transitionBuilder: (_, animation, __, child) {
-        return SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(1, 0),
-            end: Offset.zero,
-          ).animate(animation),
-          child: child,
-        );
-      },
-    );
+  final _search = TextEditingController();
+  static const _categories = ['Laços', 'Tiaras', 'Presilhas', 'Kits', 'Faixas'];
+  bool _menuOpen = false;
+  void _searchProducts() {
+    final term = _search.text.trim();
+    if (term.isNotEmpty)
+      Navigator.pushNamed(
+        context,
+        Uri(path: '/busca', queryParameters: {'q': term}).toString(),
+      );
   }
 
   @override
   void dispose() {
-    _searchController.dispose();
+    _search.dispose();
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<User?>(
-      stream: _auth.authStateChanges(),
-      builder: (context, snapshot) {
-        final User? user = snapshot.data;
-
-        return Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 22),
-              decoration: const BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage(
-                    'assets/imagens/tela_fundo/background_cabecalho.png',
-                  ),
-                  fit: BoxFit.cover,
-                  opacity: 0.95,
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _buildSearchField(),
-                  const SizedBox(width: 40),
-                  const Expanded(flex: 3, child: _LogoLink()),
-                  const SizedBox(width: 40),
-                  Expanded(
-                    flex: 4,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        if (user != null) _buildAdminLink(user.uid),
-                        const SizedBox(width: 15),
-                        user == null
-                            ? const CabecalhoDeslogado()
-                            : CabecalhoLogado(
-                                onLogout: () async {
-                                  final cart = Provider.of<CartProvider>(
-                                    context,
-                                    listen: false,
-                                  );
-                                  await cart.moverParaFavoritosELimpar();
-                                  await _auth.signOut();
-                                  if (mounted) {
-                                    Navigator.pushReplacement(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => const HomePage(),
-                                      ),
-                                    );
-                                  }
-                                },
-                              ),
-                        const SizedBox(width: 20),
-                        Consumer<CartProvider>(
-                          builder: (_, cart, __) {
-                            return CarrinhoIcon(
-                              quantidade: cart.items.length,
-                              onTap: () => _abrirCarrinhoLateral(context),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            _buildBottomMenu(),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildAdminLink(String uid) {
-    return FutureBuilder<DocumentSnapshot>(
-      future: FirebaseFirestore.instance.collection('usuarios').doc(uid).get(),
-      builder: (context, snapshot) {
-        if (snapshot.hasData && snapshot.data!.exists) {
-          final data = snapshot.data!.data() as Map<String, dynamic>?;
-          if (data != null && data['tipo'] == 'admin') {
-            return TextButton.icon(
-              onPressed: _abrirPainelAdmin,
-              icon: const Icon(
-                Icons.settings_suggest,
-                color: Colors.brown,
-                size: 20,
-              ),
-              label: const Text(
-                "PAINEL ADMIN",
-                style: TextStyle(
-                  color: Colors.brown,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                ),
-              ),
-              style: TextButton.styleFrom(
-                backgroundColor: Colors.white.withOpacity(0.5),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-              ),
-            );
-          }
-        }
-        return const SizedBox.shrink();
-      },
-    );
-  }
-
-  Widget _buildSearchField() {
-    return Expanded(
-      flex: 4,
-      child: Container(
-        height: 45,
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(40),
-        ),
-        child: TextField(
-          controller: _searchController,
-          onSubmitted: _realizarBusca,
-          decoration: InputDecoration(
-            hintText: 'Pesquisar laços...',
-            border: InputBorder.none,
-            suffixIcon: IconButton(
-              icon: const Icon(
-                Icons.search,
-                color: Color(0xFFE91E63),
-              ), // Rosa Pink
-              onPressed: () => _realizarBusca(_searchController.text),
-            ),
-          ),
-        ),
+  Widget _searchField() => TextField(
+    controller: _search,
+    textInputAction: TextInputAction.search,
+    onSubmitted: (_) => _searchProducts(),
+    decoration: InputDecoration(
+      hintText: 'Encontre seu acessório favorito',
+      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+      suffixIcon: IconButton(
+        tooltip: 'Pesquisar produtos',
+        onPressed: _searchProducts,
+        icon: const Icon(Icons.search),
       ),
-    );
-  }
-
-  Widget _buildBottomMenu() {
-    return Container(
-      height: 45,
-      color: const Color(0xFFFFF3E5),
-      child: const Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _MenuItem(title: 'Laços'),
-          _MenuItem(title: 'Tiaras'),
-          _MenuItem(title: 'Presilhas'),
-          _MenuItem(title: 'Kits'),
-          _MenuItem(title: 'Faixas'),
-        ],
-      ),
-    );
-  }
-}
-
-// ... Mantendo os widgets de apoio (_MenuItem, _LogoLink, CarrinhoIcon) como estavam ...
-class _MenuItem extends StatelessWidget {
-  final String title;
-  const _MenuItem({required this.title});
-
-  @override
-  Widget build(BuildContext context) => MouseRegion(
-    cursor: SystemMouseCursors.click,
-    child: GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => CategoriaPage(categoriaNome: title, isBusca: false),
-        ),
-      ),
+    ),
+  );
+  Widget _logo() => Semantics(
+    label: 'Benta Laços, página inicial',
+    button: true,
+    child: InkWell(
+      onTap: () =>
+          Navigator.pushNamedAndRemoveUntil(context, '/', (_) => false),
+      borderRadius: BorderRadius.circular(12),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        child: Text(
-          title,
-          style: const TextStyle(
-            color: Colors.brown,
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-          ),
+        padding: const EdgeInsets.all(8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(
+              'assets/imagens/logo.png',
+              height: 56,
+              width: 100,
+              fit: BoxFit.contain,
+              excludeFromSemantics: true,
+            ),
+            const Text(
+              'Feito à mão',
+              style: TextStyle(fontSize: 11, color: TemaSite.corSecundaria),
+            ),
+          ],
         ),
       ),
     ),
   );
-}
-
-class _LogoLink extends StatelessWidget {
-  const _LogoLink();
-
-  @override
-  Widget build(BuildContext context) => MouseRegion(
-    cursor: SystemMouseCursors.click,
-    child: GestureDetector(
-      onTap: () => Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const HomePage()),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Image.asset('assets/imagens/logo.png', height: 60),
-          const Text(
-            'Acessórios infantis',
-            style: TextStyle(
-              fontSize: 10,
-              color: Colors.brown,
-              fontWeight: FontWeight.w600,
-            ),
+  Widget _actions(User? user) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      if (user != null)
+        FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+          future: StoreEnvironment.database
+              .collection('usuarios')
+              .doc(user.uid)
+              .get(),
+          builder: (context, snapshot) =>
+              snapshot.data?.data()?['tipo'] == 'admin'
+              ? IconButton(
+                  tooltip: 'Painel administrativo',
+                  onPressed: () => Navigator.pushNamed(context, '/admin'),
+                  icon: const Icon(Icons.settings_outlined),
+                )
+              : const SizedBox.shrink(),
+        ),
+      if (user == null)
+        IconButton(
+          tooltip: 'Entrar na minha conta',
+          onPressed: () => Navigator.pushNamed(context, '/login'),
+          icon: const Icon(Icons.person_outline),
+        )
+      else
+        PopupMenuButton<String>(
+          tooltip: 'Minha conta',
+          icon: const Icon(Icons.person_outline),
+          onSelected: (action) async {
+            if (action == 'sair') {
+              await FirebaseAuth.instance.signOut();
+              if (context.mounted)
+                Navigator.pushNamedAndRemoveUntil(context, '/', (_) => false);
+            } else {
+              Navigator.pushNamed(context, action);
+            }
+          },
+          itemBuilder: (_) => const [
+            PopupMenuItem(value: '/minha-conta', child: Text('Minha conta')),
+            PopupMenuItem(value: '/meus-pedidos', child: Text('Meus pedidos')),
+            PopupMenuItem(value: 'sair', child: Text('Sair da conta')),
+          ],
+        ),
+      Consumer<CartProvider>(
+        builder: (context, cart, _) => IconButton(
+          tooltip: 'Carrinho com ${cart.itemCount} itens',
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const CartScreen()),
           ),
-        ],
+          icon: Badge(
+            isLabelVisible: cart.itemCount > 0,
+            label: Text('${cart.itemCount}'),
+            child: const Icon(Icons.shopping_bag_outlined),
+          ),
+        ),
       ),
+    ],
+  );
+  Widget _category(String title) => TextButton(
+    onPressed: () => Navigator.pushNamed(
+      context,
+      '/categoria/${Uri.encodeComponent(title)}',
+    ),
+    child: Text(
+      title,
+      style: const TextStyle(
+        color: TemaSite.corSecundaria,
+        fontWeight: FontWeight.w600,
+      ),
+    ),
+  );
+  @override
+  Widget build(BuildContext context) => StreamBuilder<User?>(
+    stream: FirebaseAuth.instance.authStateChanges(),
+    initialData: FirebaseAuth.instance.currentUser,
+    builder: (context, snapshot) => LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 900;
+        return Material(
+          color: Colors.white,
+          child: Column(
+            children: [
+              Container(
+                width: double.infinity,
+                color: const Color(0xFFF7E9E9),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 8,
+                  horizontal: 16,
+                ),
+                child: const Text(
+                  'Feito à mão, com carinho em cada detalhe',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 12, color: TemaSite.corSecundaria),
+                ),
+              ),
+              Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1240),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: compact ? 8 : 32,
+                      vertical: 12,
+                    ),
+                    child: compact
+                        ? Column(
+                            children: [
+                              Row(
+                                children: [
+                                  IconButton(
+                                    tooltip: 'Categorias',
+                                    onPressed: () =>
+                                        setState(() => _menuOpen = !_menuOpen),
+                                    icon: Icon(
+                                      _menuOpen ? Icons.close : Icons.menu,
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: _logo(),
+                                    ),
+                                  ),
+                                  _actions(snapshot.data),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              _searchField(),
+                            ],
+                          )
+                        : Row(
+                            children: [
+                              _logo(),
+                              const SizedBox(width: 40),
+                              Expanded(child: _searchField()),
+                              const SizedBox(width: 32),
+                              _actions(snapshot.data),
+                            ],
+                          ),
+                  ),
+                ),
+              ),
+              if (!compact || _menuOpen)
+                Container(
+                  width: double.infinity,
+                  decoration: const BoxDecoration(
+                    border: Border(
+                      top: BorderSide(color: Color(0xFFF1E9E3)),
+                      bottom: BorderSide(color: Color(0xFFF1E9E3)),
+                    ),
+                  ),
+                  child: Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: compact ? 8 : 40,
+                    children: [
+                      TextButton(
+                        onPressed: () =>
+                            Navigator.pushNamed(context, '/colecao'),
+                        child: const Text('Todos os produtos'),
+                      ),
+                      ..._categories.map(_category),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
     ),
   );
 }
@@ -311,33 +250,14 @@ class CarrinhoIcon extends StatelessWidget {
   final int quantidade;
   final VoidCallback? onTap;
   const CarrinhoIcon({super.key, this.quantidade = 0, this.onTap});
-
   @override
-  Widget build(BuildContext context) => MouseRegion(
-    cursor: SystemMouseCursors.click,
-    child: GestureDetector(
-      onTap: onTap,
-      child: Row(
-        children: [
-          const Icon(Icons.shopping_cart_outlined, color: Colors.brown),
-          const SizedBox(width: 6),
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: const BoxDecoration(
-              color: Colors.brown,
-              shape: BoxShape.circle,
-            ),
-            child: Text(
-              quantidade.toString(),
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      ),
+  Widget build(BuildContext context) => IconButton(
+    tooltip: 'Carrinho',
+    onPressed: onTap,
+    icon: Badge(
+      isLabelVisible: quantidade > 0,
+      label: Text('$quantidade'),
+      child: const Icon(Icons.shopping_bag_outlined),
     ),
   );
 }

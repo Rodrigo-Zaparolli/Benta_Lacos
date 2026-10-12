@@ -1,185 +1,15 @@
+import '../../core/config/store_environment.dart';
+import '../../shared/utils/store_format.dart';
 // lib/produtos/laco.dart
 import 'package:benta_lacos/domain/models/product_model.dart';
 import 'package:benta_lacos/domain/providers/cart_provider.dart';
 import 'package:benta_lacos/shared/sections/carousel/carrossel_veja.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../shared/theme/tema_site.dart';
 import '../../shared/sections/header/cabecalho.dart';
 import '../../shared/sections/footer/rodape.dart';
 import '../../shared/widgets/background_fundo.dart';
-
-// ======================================================
-// COMPONENTE: MEIOS DE ENVIO (AJUSTADO)
-// ======================================================
-class MeiosEnvioSection extends StatefulWidget {
-  const MeiosEnvioSection({super.key});
-
-  @override
-  State<MeiosEnvioSection> createState() => _MeiosEnvioSectionState();
-}
-
-class _MeiosEnvioSectionState extends State<MeiosEnvioSection> {
-  final TextEditingController _cepController = TextEditingController();
-  bool _carregando = false;
-
-  // [AJUSTE]: Lista para armazenar e exibir as opções de frete calculadas
-  List<Map<String, dynamic>> _opcoesFrete = [];
-
-  void _calcularFrete() {
-    final cep = _cepController.text.replaceAll(RegExp(r'[^0-9]'), '');
-
-    if (cep.length != 8) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Por favor, insira um CEP válido com 8 dígitos.'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
-      return;
-    }
-
-    setState(() {
-      _carregando = true;
-      _opcoesFrete = []; // Limpa resultados anteriores antes de nova busca
-    });
-
-    // [AJUSTE]: Simulação de valores reais (PAC e SEDEX)
-    // Futuramente, você poderá substituir este delay por uma chamada de API real
-    Future.delayed(const Duration(seconds: 1), () {
-      if (!mounted) return;
-      setState(() {
-        _carregando = false;
-        _opcoesFrete = [
-          {
-            'tipo': 'PAC',
-            'valor': 24.90,
-            'prazo': '7 a 10 dias úteis',
-            'icone': Icons.inventory_2_outlined,
-          },
-          {
-            'tipo': 'SEDEX',
-            'valor': 48.50,
-            'prazo': '2 a 4 dias úteis',
-            'icone': Icons.bolt_rounded,
-          },
-        ];
-      });
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: SizedBox(
-                height: 45,
-                child: TextField(
-                  controller: _cepController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    hintText: 'Seu CEP (00000000)',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 15),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            ElevatedButton(
-              onPressed: _carregando ? null : _calcularFrete,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.black87,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              child: _carregando
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
-                    )
-                  : const Text('Calcular'),
-            ),
-          ],
-        ),
-
-        // [AJUSTE]: Widget que constrói visualmente a lista de preços de frete
-        if (_opcoesFrete.isNotEmpty) ...[
-          const SizedBox(height: 15),
-          ..._opcoesFrete.map(
-            (frete) => Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey.shade300),
-              ),
-              child: Row(
-                children: [
-                  Icon(frete['icone'], color: TemaSite.corPrimaria, size: 20),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          frete['tipo'],
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        Text(
-                          frete['prazo'],
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Text(
-                    'R\$ ${frete['valor'].toStringAsFixed(2)}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-
-        TextButton(
-          onPressed: () async {
-            final url = Uri.parse('https://buscacepinter.correios.com.br/');
-            if (await canLaunchUrl(url)) await launchUrl(url);
-          },
-          child: const Text(
-            'Não sei meu CEP',
-            style: TextStyle(
-              decoration: TextDecoration.underline,
-              color: Colors.grey,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
 
 // ======================================================
 // PÁGINA PRINCIPAL DO PRODUTO
@@ -194,7 +24,6 @@ class LacoPage extends StatefulWidget {
 
 class _LacoPageState extends State<LacoPage> {
   int _selectedIndex = 0;
-  bool _isShippingExpanded = false;
   int _quantidade = 1;
 
   void _showZoomImage(List<String> imagens) {
@@ -238,11 +67,37 @@ class _LacoPageState extends State<LacoPage> {
     );
   }
 
+  void _adicionarAoCarrinho(CartProvider cart) {
+    final existing = cart.items
+        .where((i) => i.product.id == widget.product.id)
+        .fold(0, (int sum, i) => sum + i.quantity);
+    if (!StoreEnvironment.isTest &&
+        _quantidade + existing > widget.product.purchaseLimit) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Quantidade maior que o estoque disponível.'),
+        ),
+      );
+      return;
+    }
+    cart.addItem(widget.product, _quantidade);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          "${widget.product.name} adicionado ao carrinho ($_quantidade unidades)!",
+        ),
+        backgroundColor: TemaSite.corPrimaria,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isDesktop = screenWidth >= 900;
     final config = TemaSite.produto;
+    final cart = Provider.of<CartProvider>(context, listen: false);
 
     List<String> imagens = [
       if (widget.product.imageUrl != null) widget.product.imageUrl!,
@@ -271,7 +126,10 @@ class _LacoPageState extends State<LacoPage> {
                               child: _buildImagemPrincipal(imagens),
                             ),
                             const SizedBox(width: 50),
-                            Expanded(flex: 2, child: _buildInfoCompra(config)),
+                            Expanded(
+                              flex: 2,
+                              child: _buildInfoCompra(config, cart),
+                            ),
                           ],
                         )
                       : Column(
@@ -280,7 +138,7 @@ class _LacoPageState extends State<LacoPage> {
                             const SizedBox(height: 15),
                             _buildMiniaturasLinha(imagens),
                             const SizedBox(height: 30),
-                            _buildInfoCompra(config),
+                            _buildInfoCompra(config, cart),
                           ],
                         ),
                 ),
@@ -337,7 +195,11 @@ class _LacoPageState extends State<LacoPage> {
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(10),
-          child: Image.network(imagens[index], fit: BoxFit.cover),
+          child: Image.network(
+            imagens[index],
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => const Icon(Icons.image_outlined),
+          ),
         ),
       ),
     );
@@ -345,9 +207,9 @@ class _LacoPageState extends State<LacoPage> {
 
   Widget _buildImagemPrincipal(List<String> imagens) {
     return GestureDetector(
-      onTap: () => _showZoomImage(imagens),
+      onTap: imagens.isEmpty ? null : () => _showZoomImage(imagens),
       child: Container(
-        height: 500,
+        height: MediaQuery.of(context).size.width < 600 ? 320 : 500,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(25),
           border: Border.all(color: Colors.grey.shade200),
@@ -362,14 +224,19 @@ class _LacoPageState extends State<LacoPage> {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(25),
           child: imagens.isNotEmpty
-              ? Image.network(imagens[_selectedIndex], fit: BoxFit.contain)
+              ? Image.network(
+                  imagens[_selectedIndex.clamp(0, imagens.length - 1)],
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) =>
+                      const Icon(Icons.image_outlined, size: 80),
+                )
               : const Icon(Icons.image_not_supported, size: 100),
         ),
       ),
     );
   }
 
-  Widget _buildInfoCompra(ConfigProduto config) {
+  Widget _buildInfoCompra(ConfigProduto config, CartProvider cart) {
     double percentualDesconto = widget.product.discountPix ?? 0;
     double precoPix = widget.product.price * (1 - (percentualDesconto / 100));
 
@@ -384,24 +251,28 @@ class _LacoPageState extends State<LacoPage> {
             color: config.tituloCor,
           ),
         ),
+
         const SizedBox(height: 10),
+
         if (widget.product.oldPrice != null)
           Text(
-            "De R\$ ${widget.product.oldPrice!.toStringAsFixed(2)}",
+            "De ${formatMoney(widget.product.oldPrice!)}",
             style: const TextStyle(
               color: Colors.grey,
               decoration: TextDecoration.lineThrough,
               fontSize: 16,
             ),
           ),
+
         Text(
-          "R\$ ${widget.product.price.toStringAsFixed(2)}",
+          "${formatMoney(widget.product.price)}",
           style: TextStyle(
             fontSize: 34,
             fontWeight: FontWeight.bold,
             color: config.precoCor,
           ),
         ),
+
         if (percentualDesconto > 0)
           Container(
             margin: const EdgeInsets.only(top: 10),
@@ -411,49 +282,50 @@ class _LacoPageState extends State<LacoPage> {
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
-              "R\$ ${precoPix.toStringAsFixed(2)} no PIX ($percentualDesconto% de desconto)",
+              "${formatMoney(precoPix)} no PIX ($percentualDesconto% de desconto)",
               style: TextStyle(
                 color: Colors.green.shade800,
                 fontWeight: FontWeight.bold,
               ),
             ),
           ),
+
+        const SizedBox(height: 20),
+
+        if (widget.product.madeToOrder)
+          Text(
+            'Sob encomenda • Fabricação em até ${widget.product.productionDays} dias corridos após aceitação.',
+          ),
+        const Text(
+          "Quantidade:",
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
+        const SizedBox(height: 8),
+        _buildQtdSelector(),
+
         const SizedBox(height: 30),
-        Row(
-          children: [
-            _buildQtdSelector(),
-            const SizedBox(width: 15),
-            Expanded(
-              child: ElevatedButton(
-                onPressed: () {
-                  context.read<CartProvider>().addItem(
-                    widget.product,
-                    _quantidade,
-                  );
-                  Scaffold.of(context).openEndDrawer();
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: config.carrinhoBotaoFundo,
-                  padding: const EdgeInsets.symmetric(vertical: 20),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: Text(
-                  "COMPRAR",
-                  style: TextStyle(
-                    color: config.carrinhoBotaoTexto,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                  ),
-                ),
+
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: StoreEnvironment.isTest || widget.product.available
+                ? () => _adicionarAoCarrinho(cart)
+                : null,
+            icon: const Icon(Icons.add_shopping_cart),
+            label: const Text(
+              "Adicionar ao carrinho",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: TemaSite.corPrimaria,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 18),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
-          ],
+          ),
         ),
-        const SizedBox(height: 30),
-        const Divider(),
-        _buildShippingHeader(),
       ],
     );
   }
@@ -513,11 +385,13 @@ class _LacoPageState extends State<LacoPage> {
 
   Widget _buildQtdSelector() {
     return Container(
+      width: 140,
       decoration: BoxDecoration(
         border: Border.all(color: Colors.grey.shade300),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           IconButton(
             onPressed: () =>
@@ -529,30 +403,15 @@ class _LacoPageState extends State<LacoPage> {
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           IconButton(
-            onPressed: () => setState(() => _quantidade++),
+            onPressed:
+                StoreEnvironment.isTest ||
+                    _quantidade < widget.product.purchaseLimit
+                ? () => setState(() => _quantidade++)
+                : null,
             icon: const Icon(Icons.add),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildShippingHeader() {
-    return Column(
-      children: [
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          leading: const Icon(Icons.local_shipping_outlined),
-          title: const Text(
-            "Meios de envio",
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          trailing: Icon(_isShippingExpanded ? Icons.remove : Icons.add),
-          onTap: () =>
-              setState(() => _isShippingExpanded = !_isShippingExpanded),
-        ),
-        if (_isShippingExpanded) const MeiosEnvioSection(),
-      ],
     );
   }
 }

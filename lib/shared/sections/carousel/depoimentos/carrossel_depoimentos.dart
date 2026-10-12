@@ -1,3 +1,4 @@
+import 'package:benta_lacos/core/config/store_environment.dart';
 import 'dart:async';
 import 'package:benta_lacos/shared/sections/carousel/depoimentos/depoimento.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -61,7 +62,7 @@ class _CarrosselDepoimentosState extends State<CarrosselDepoimentos> {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
+      stream: StoreEnvironment.database
           .collection('depoimentos')
           .where('aprovado', isEqualTo: true)
           .snapshots(),

@@ -6,7 +6,6 @@ class CabecalhoDeslogado extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ❌ PROBLEMA RESOLVIDO: Removida a linha 'color: Colors.white' e o 'padding'
     // O widget retorna diretamente o Row, permitindo que o fundo do widget Pai (Cabecalho) seja visível.
     return Row(
       mainAxisAlignment:
@@ -24,7 +23,6 @@ class CabecalhoDeslogado extends StatelessWidget {
               );
             },
             child: Container(
-              // 🔥 CORREÇÃO 1: Removida a cor branca. O 'color: Colors.transparent' já estava correto.
               color: Colors.transparent,
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               child: const Row(

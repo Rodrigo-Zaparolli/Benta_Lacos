@@ -45,7 +45,7 @@ class HomePage extends StatelessWidget {
               // --- SEÇÃO DO CARROSSEL DE DEPOIMENTOS ---
               // Visível para todos os usuários
               const Padding(
-                padding: EdgeInsets.only(top: 5.0),
+                padding: EdgeInsets.symmetric(vertical: 32.0, horizontal: 20.0),
                 child: CarrosselDepoimentos(),
               ),
 
