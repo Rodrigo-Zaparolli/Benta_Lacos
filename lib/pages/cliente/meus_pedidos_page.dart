@@ -6,7 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import '../../domain/services/order_messages.dart';
 
-import '../../../domain/services/pdf_service_cliente.dart';
+import '../../domain/services/pdf_service_cliente.dart';
 import '../../shared/sections/header/cabecalho.dart';
 import '../../shared/sections/footer/rodape.dart';
 import '../../shared/widgets/background_fundo.dart';
