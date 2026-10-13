@@ -21,7 +21,7 @@ class DuvidasPage extends StatelessWidget {
                 padding: const EdgeInsets.all(20),
                 child: StreamBuilder<QuerySnapshot>(
                   stream: StoreEnvironment.database
-                      .collection('duvidas')
+                      .collection(StoreEnvironment.collectionName('duvidas'))
                       .orderBy('ordem')
                       .snapshots(),
                   builder: (context, snapshot) {

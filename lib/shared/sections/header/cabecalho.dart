@@ -80,7 +80,7 @@ class _CabecalhoState extends State<Cabecalho> {
       if (user != null)
         FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
           future: StoreEnvironment.database
-              .collection('usuarios')
+              .collection(StoreEnvironment.collectionName('usuarios'))
               .doc(user.uid)
               .get(),
           builder: (context, snapshot) =>

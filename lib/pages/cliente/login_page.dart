@@ -58,7 +58,7 @@ class _LoginPageState extends State<LoginPage> {
       if (!mounted) return;
 
       final doc = await StoreEnvironment.database
-          .collection('usuarios')
+          .collection(StoreEnvironment.collectionName('usuarios'))
           .doc(uid)
           .get();
       final tipo = doc.data()?['tipo'] ?? 'cliente';

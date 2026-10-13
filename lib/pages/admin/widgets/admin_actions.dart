@@ -97,7 +97,7 @@ Future<void> showProductHistory(
               child: SingleChildScrollView(
                 child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
                   stream: StoreEnvironment.database
-                      .collection('produtos')
+                      .collection(StoreEnvironment.collectionName('produtos'))
                       .doc(id)
                       .snapshots(),
                   builder: (context, s) => s.hasError

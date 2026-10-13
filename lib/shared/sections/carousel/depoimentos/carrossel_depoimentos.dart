@@ -63,7 +63,7 @@ class _CarrosselDepoimentosState extends State<CarrosselDepoimentos> {
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
       stream: StoreEnvironment.database
-          .collection('depoimentos')
+          .collection(StoreEnvironment.collectionName('depoimentos'))
           .where('aprovado', isEqualTo: true)
           .snapshots(),
       builder: (context, snapshot) {

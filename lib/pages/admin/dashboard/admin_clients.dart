@@ -18,7 +18,9 @@ class _AdminClientsState extends State<AdminClients> {
   @override
   void initState() {
     super.initState();
-    _stream = StoreEnvironment.database.collection('usuarios').snapshots();
+    _stream = StoreEnvironment.database
+        .collection(StoreEnvironment.collectionName('usuarios'))
+        .snapshots();
   }
 
   void _details(
@@ -65,7 +67,7 @@ class _AdminClientsState extends State<AdminClients> {
               Expanded(
                 child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
                   stream: StoreEnvironment.database
-                      .collection('pedidos')
+                      .collection(StoreEnvironment.collectionName('pedidos'))
                       .where('clienteId', isEqualTo: doc.id)
                       .snapshots(),
                   builder: (context, s) {
@@ -129,7 +131,7 @@ class _AdminClientsState extends State<AdminClients> {
               'Não foi possível carregar os clientes.',
               retry: () => setState(
                 () => _stream = StoreEnvironment.database
-                    .collection('usuarios')
+                    .collection(StoreEnvironment.collectionName('usuarios'))
                     .snapshots(),
               ),
             );

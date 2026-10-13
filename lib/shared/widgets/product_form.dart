@@ -42,7 +42,12 @@ class _ProductFormState extends State<ProductForm> {
   void initState() {
     super.initState();
     final p = widget.product;
-    _id = p?.id ?? StoreEnvironment.database.collection('produtos').doc().id;
+    _id =
+        p?.id ??
+        StoreEnvironment.database
+            .collection(StoreEnvironment.collectionName('produtos'))
+            .doc()
+            .id;
     _name.text = p?.name ?? '';
     _price.text = p?.price.toStringAsFixed(2).replaceAll('.', ',') ?? '';
     _quantity.text = '${p?.quantity ?? 0}';

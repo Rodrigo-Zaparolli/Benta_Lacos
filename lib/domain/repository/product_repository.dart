@@ -14,7 +14,7 @@ class ProductRepository with ChangeNotifier {
   static ProductRepository get instance => _instance;
 
   final FirebaseFirestore _firestore = StoreEnvironment.database;
-  final String _collection = 'produtos';
+  final String _collection = StoreEnvironment.collectionName('produtos');
 
   List<Product> _products = [];
   List<Product> get products =>

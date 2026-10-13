@@ -24,7 +24,9 @@ class _AdminOverviewState extends State<AdminOverview> {
   @override
   void initState() {
     super.initState();
-    _stream = StoreEnvironment.database.collection('pedidos').snapshots();
+    _stream = StoreEnvironment.database
+        .collection(StoreEnvironment.collectionName('pedidos'))
+        .snapshots();
   }
 
   @override
@@ -38,7 +40,7 @@ class _AdminOverviewState extends State<AdminOverview> {
                 'Não foi possível carregar a visão geral.',
                 retry: () => setState(
                   () => _stream = StoreEnvironment.database
-                      .collection('pedidos')
+                      .collection(StoreEnvironment.collectionName('pedidos'))
                       .snapshots(),
                 ),
               ),

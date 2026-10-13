@@ -28,8 +28,9 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
     _range = DateTimeRange(start: DateTime(now.year, now.month, 1), end: now);
   }
 
-  void _resetStream() =>
-      _stream = StoreEnvironment.database.collection('pedidos').snapshots();
+  void _resetStream() => _stream = StoreEnvironment.database
+      .collection(StoreEnvironment.collectionName('pedidos'))
+      .snapshots();
   String get _period => _range == null
       ? 'Todo o período'
       : '${DateFormat('dd/MM/yyyy').format(_range!.start)} a ${DateFormat('dd/MM/yyyy').format(_range!.end)}';

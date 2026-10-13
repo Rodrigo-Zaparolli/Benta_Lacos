@@ -23,7 +23,9 @@ class NossaHistoriaPage extends StatelessWidget {
                 ),
                 child: StreamBuilder<DocumentSnapshot>(
                   stream: StoreEnvironment.database
-                      .collection('institucional')
+                      .collection(
+                        StoreEnvironment.collectionName('institucional'),
+                      )
                       .doc('nossa_historia')
                       .snapshots(),
                   builder: (context, snapshot) {

@@ -44,6 +44,15 @@ async function main() {
    add(name,'pedidos/x/itens/p','create',null,{clienteId:'customer',item},expected);
    cases[cases.length-1].functionMocks[0].result.value.data={tipo:'cliente',name:'Laço',price:10,quantity:5};
  }
+ for (const original of [...cases].filter(c=>['valid pickup order','valid line','line beyond stock','nine valid lines','customer cannot become admin','cannot read another order','can read own order'].includes(c.name))) {
+   const sandbox=structuredClone(original); sandbox.name='sandbox '+original.name;
+   const namespace=s=>s.replace(/\/(produtos|usuarios|pedidos)\//g,'/teste_$1/');
+   sandbox.request.path=namespace(sandbox.request.path);
+   if (sandbox.request.resource?.data.itens) sandbox.request.resource.data.pedidoTeste=true;
+   for (const mock of sandbox.functionMocks) for (const arg of mock.args) if (arg.exactValue) arg.exactValue=namespace(arg.exactValue);
+   if (original.name==='line beyond stock') sandbox.expectation='ALLOW';
+   cases.push(sandbox);
+ }
  const suite = await call(rulesBase+':test',{method:'POST',body:JSON.stringify({source,testSuite:{testCases:cases.map(({name,...c})=>c)}})});
  suite.sourceHash = require('crypto').createHash('sha256').update(source.files[0].content).digest('hex');
  fs.writeFileSync('artifacts/improvements-rules-tests.json',JSON.stringify(suite,null,2));

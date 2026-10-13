@@ -42,7 +42,7 @@ class Rodape extends StatelessWidget {
 
     return StreamBuilder<DocumentSnapshot>(
       stream: StoreEnvironment.database
-          .collection('institucional')
+          .collection(StoreEnvironment.collectionName('institucional'))
           .doc('contato')
           .snapshots(),
       builder: (context, snapshot) {

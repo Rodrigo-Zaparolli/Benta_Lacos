@@ -11,7 +11,7 @@ class ProductRoute extends StatelessWidget {
   Widget build(BuildContext context) =>
       StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
         stream: StoreEnvironment.database
-            .collection('produtos')
+            .collection(StoreEnvironment.collectionName('produtos'))
             .doc(id)
             .snapshots(),
         builder: (context, snapshot) {

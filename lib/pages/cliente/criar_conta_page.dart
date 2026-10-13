@@ -100,23 +100,26 @@ class _CriarContaPageState extends State<CriarContaPage> {
 
       final String uid = userCred.user!.uid;
 
-      await _firestore.collection('usuarios').doc(uid).set({
-        'uid': uid,
-        'nome': _nomeController.text.trim(),
-        'sobrenome': _sobrenomeController.text.trim(),
-        'email': _emailController.text.trim(),
-        'telefone': _telefoneController.text.trim(),
-        'dataNascimento': _nascimentoController.text.trim(),
-        'cep': _cepController.text.trim(),
-        'endereco': _enderecoController.text.trim(),
-        'numero': _numeroController.text.trim(),
-        'bairro': _bairroController.text.trim(),
-        'complemento': _complementoController.text.trim(),
-        'cidade': _cidadeController.text.trim(),
-        'uf': _estadoController.text.trim(),
-        'tipo': 'cliente',
-        'dataCriacao': FieldValue.serverTimestamp(),
-      });
+      await _firestore
+          .collection(StoreEnvironment.collectionName('usuarios'))
+          .doc(uid)
+          .set({
+            'uid': uid,
+            'nome': _nomeController.text.trim(),
+            'sobrenome': _sobrenomeController.text.trim(),
+            'email': _emailController.text.trim(),
+            'telefone': _telefoneController.text.trim(),
+            'dataNascimento': _nascimentoController.text.trim(),
+            'cep': _cepController.text.trim(),
+            'endereco': _enderecoController.text.trim(),
+            'numero': _numeroController.text.trim(),
+            'bairro': _bairroController.text.trim(),
+            'complemento': _complementoController.text.trim(),
+            'cidade': _cidadeController.text.trim(),
+            'uf': _estadoController.text.trim(),
+            'tipo': 'cliente',
+            'dataCriacao': FieldValue.serverTimestamp(),
+          });
 
       await userCred.user?.sendEmailVerification();
 

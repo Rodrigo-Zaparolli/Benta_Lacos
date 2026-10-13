@@ -38,7 +38,7 @@ class _DepoimentoFormState extends State<DepoimentoForm> {
     // 2. Plano B: Busca na sua coleção 'usuarios' do Firestore
     try {
       final doc = await StoreEnvironment.database
-          .collection('usuarios')
+          .collection(StoreEnvironment.collectionName('usuarios'))
           .doc(user.uid)
           .get();
 
@@ -61,14 +61,16 @@ class _DepoimentoFormState extends State<DepoimentoForm> {
     try {
       final user = FirebaseAuth.instance.currentUser;
 
-      await StoreEnvironment.database.collection('depoimentos').add({
-        'cliente': _nomeExibicao, // Usa o nome que encontramos
-        'uid': user?.uid,
-        'texto': _textoController.text,
-        'estrelas': _estrelas,
-        'aprovado': false,
-        'dataEnvio': FieldValue.serverTimestamp(),
-      });
+      await StoreEnvironment.database
+          .collection(StoreEnvironment.collectionName('depoimentos'))
+          .add({
+            'cliente': _nomeExibicao, // Usa o nome que encontramos
+            'uid': user?.uid,
+            'texto': _textoController.text,
+            'estrelas': _estrelas,
+            'aprovado': false,
+            'dataEnvio': FieldValue.serverTimestamp(),
+          });
 
       if (mounted) {
         Navigator.pop(context);

@@ -47,7 +47,7 @@ class _MinhaContaPageState extends State<MinhaContaPage> {
 
     try {
       DocumentSnapshot doc = await _firestore
-          .collection('usuarios')
+          .collection(StoreEnvironment.collectionName('usuarios'))
           .doc(user.uid)
           .get();
       if (doc.exists) {
@@ -81,19 +81,22 @@ class _MinhaContaPageState extends State<MinhaContaPage> {
     if (user == null) return;
 
     try {
-      await _firestore.collection('usuarios').doc(user.uid).update({
-        'nome': _nomeController.text,
-        'sobrenome': _sobrenomeController.text,
-        'telefone': _telefoneController.text,
-        'nascimento': _nascimentoController.text,
-        'cep': _cepController.text,
-        'bairro': _bairroController.text,
-        'rua': _ruaController.text,
-        'numero': _numeroController.text,
-        'complemento': _complementoController.text,
-        'cidade': _cidadeController.text,
-        'uf': _ufController.text,
-      });
+      await _firestore
+          .collection(StoreEnvironment.collectionName('usuarios'))
+          .doc(user.uid)
+          .update({
+            'nome': _nomeController.text,
+            'sobrenome': _sobrenomeController.text,
+            'telefone': _telefoneController.text,
+            'nascimento': _nascimentoController.text,
+            'cep': _cepController.text,
+            'bairro': _bairroController.text,
+            'rua': _ruaController.text,
+            'numero': _numeroController.text,
+            'complemento': _complementoController.text,
+            'cidade': _cidadeController.text,
+            'uf': _ufController.text,
+          });
 
       if (!mounted) return;
 

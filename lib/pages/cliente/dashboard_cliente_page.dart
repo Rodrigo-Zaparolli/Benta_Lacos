@@ -53,7 +53,7 @@ class _DashboardClientePageState extends State<DashboardClientePage> {
   Future<void> _carregarNome(String uid) async {
     try {
       DocumentSnapshot doc = await _firestore
-          .collection('usuarios')
+          .collection(StoreEnvironment.collectionName('usuarios'))
           .doc(uid)
           .get();
 

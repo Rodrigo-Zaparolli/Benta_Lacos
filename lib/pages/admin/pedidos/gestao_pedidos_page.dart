@@ -300,7 +300,12 @@ class _OrderDetailsState extends State<OrderDetails> {
       if (mounted) adminMessage(context, message);
     } catch (e) {
       debugPrint('Falha administrativa no pedido ${widget.id}: $e');
-      if (mounted) setState(() => _error = e is StateError ? e.message : 'Não foi possível salvar agora. Confira sua conexão e tente novamente.');
+      if (mounted)
+        setState(
+          () => _error = e is StateError
+              ? e.message
+              : 'Não foi possível salvar agora. Confira sua conexão e tente novamente.',
+        );
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -558,7 +563,8 @@ class _OrderDetailsState extends State<OrderDetails> {
               DropdownButtonFormField<String>(
                 initialValue: requester,
                 decoration: const InputDecoration(labelText: 'Quem solicitou?'),
-                validator: (v) => v == null ? 'Informe quem solicitou o cancelamento' : null,
+                validator: (v) =>
+                    v == null ? 'Informe quem solicitou o cancelamento' : null,
                 items: ['Cliente', 'Loja']
                     .map((s) => DropdownMenuItem(value: s, child: Text(s)))
                     .toList(),
@@ -753,7 +759,7 @@ class _OrderDetailsState extends State<OrderDetails> {
               Expanded(
                 child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
                   stream: StoreEnvironment.database
-                      .collection('pedidos')
+                      .collection(StoreEnvironment.collectionName('pedidos'))
                       .doc(widget.id)
                       .snapshots(),
                   builder: (context, s) {

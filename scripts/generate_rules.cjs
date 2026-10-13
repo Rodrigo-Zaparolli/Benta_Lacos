@@ -68,6 +68,14 @@ service cloud.firestore {
   match /depoimentos/{id} { allow read: if true; allow create: if signed() && request.resource.data.keys().size() <= 12; allow update, delete: if admin(); }
   match /clientes/{id} { allow read, write: if admin(); }
   match /acessos/{id} { allow read: if admin(); allow create: if request.resource.data.keys().size() <= 10; }
+  match /duvidas/{id} { allow read: if true; allow write: if admin(); }
  }
 }
 `);
+// Dedicated collection namespace works on the existing Firebase plan.
+const original = fs.readFileSync('firestore.rules','utf8');
+let sandbox = original.slice(original.indexOf('  function signed()'), original.lastIndexOf(' }'));
+sandbox = sandbox.replace(/  function signed\(\)[^\n]*\n/, '').replace(/  function self\(uid\)[^\n]*\n/, '');
+for (const name of ['admin','line','amount','validOrder','validItem']) sandbox = sandbox.replace(new RegExp('\\b'+name+'\\(', 'g'),name+'Test(');
+sandbox = sandbox.replace(/\b(produtos|usuarios|pedidos|configuracoes|institucional|depoimentos|clientes|acessos|duvidas)\b/g, 'teste_$1').replace(/database == 'benta-teste'/g, 'true');
+fs.writeFileSync('firestore.rules', original.slice(0,original.lastIndexOf(' }')) + sandbox + ' }\n}\n');

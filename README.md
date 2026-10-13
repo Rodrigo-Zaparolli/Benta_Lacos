@@ -92,14 +92,17 @@ Na visão geral, o gráfico mostra valores confirmados nos últimos 14 dias, pre
 Pedidos e clientes usam tabelas no computador e cartões no celular. O catálogo destaca produtos em destaque, esgotados e arquivados. O estoque mostra unidades disponíveis, itens esgotados, alertas de reposição e valor a preço de venda, sempre separado de lucro. Enquanto os dados estão indisponíveis, os indicadores mostram um traço em vez de números inventados.
 
 As prévias visuais em `artifacts/admin-layout-375.png` e `artifacts/admin-layout-1440.png` foram atualizadas e usam somente registros de demonstração nos testes. Não há uma rota de demonstração que contorne a autenticação da aplicação.
-## Endere?o fixo para revis?o
+## Endereço fixo de testes
 
-Use **https://benta-lacos-teste.web.app** para revisar e validar as vers?es. Esse endere?o ? um site Firebase Hosting permanente e n?o depende da expira??o dos canais de pr?via.
+Loja: https://benta-lacos.web.app
+Testes: https://benta-lacos-teste.web.app
 
-Para atualizar sempre o mesmo endere?o, execute `./scripts/deploy_test.ps1`. O script compila o aplicativo e publica somente `hosting:benta-lacos-teste`, preservando a publica??o do site principal. As rotas, incluindo `/checkout` e `/admin`, funcionam no mesmo endere?o.
+O ambiente de testes usa coleções `teste_*` no banco existente do Firebase, com autenticação compartilhada e dados comerciais separados. Essa solução funciona no plano atual, sem criar outro banco nem ativar faturamento. Imagens novas de testes usam o prefixo `teste/` no Storage.
 
-O site de testes usa o projeto Firebase `benta-lacos` e compartilha autentica??o e cat?logo. ? compilado com `STORE_TEST_MODE=true` em `build/web-test`; o site principal continua configurado para `build/web`. No endere?o de testes, produtos podem ser usados sem estoque real e os pedidos recebem `pedidoTeste: true`. Esses pedidos n?o movimentam estoque e s?o exclu?dos dos relat?rios pelo c?digo atualizado. A identifica??o de teste aparece no checkout, no acompanhamento, no painel e nos resumos. A compila??o normal mant?m a valida??o de estoque.
+Pedidos de testes não movimentam estoque nem entram nos totais financeiros. As regras impedem usar a marca de teste para ignorar estoque na loja. Os administradores recebem registros mínimos de permissão nas coleções de testes; cadastros pessoais e pedidos reais não são copiados.
 
-Na lista administrativa de pedidos, clique no status ou na seta para abrir o pedido e use **Alterar status**. O seletor oferece as pr?ximas etapas permitidas. Marcar como pago mant?m a confirma??o do meio de pagamento e exige o frete informado; envio e entrega seguem a sequ?ncia do atendimento. Cancelamento continua com confirma??o e tratamento de estoque.
+Para publicar testes, execute `./scripts/deploy_test.ps1`. O site principal usa `build/web` e os testes usam `build/web-test` com `STORE_TEST_MODE=true`.
 
-Nos detalhes de um pedido pendente, **Retirar na loja** define o frete como zero, retira eventual frete anterior do total e libera a confirma??o do pagamento. O atendimento fica registrado como retirada na loja.
+Produção segue Pendente → Aceito → Fabricado → Enviado/Entregue. Retirada passa de Fabricado para Entregue. Pagamento é confirmado separadamente. Os detalhes permitem registrar motivo e solicitante de cancelamento, reembolso, previsão e instruções. O aviso de retirada abre WhatsApp com a mensagem pronta; o envio é confirmado manualmente.
+
+Validação final: 45 testes do app, 32 testes das regras, pedido autenticado nas coleções de testes e proteção de preço/permissão verificados. As duas versões e as regras foram publicadas em 12/10/2026.

@@ -23,7 +23,9 @@ class OQueFacoPage extends StatelessWidget {
                 ),
                 child: StreamBuilder<DocumentSnapshot>(
                   stream: StoreEnvironment.database
-                      .collection('institucional')
+                      .collection(
+                        StoreEnvironment.collectionName('institucional'),
+                      )
                       .doc('oque_faco')
                       .snapshots(),
                   builder: (context, snapshot) {

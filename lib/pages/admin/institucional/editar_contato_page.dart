@@ -18,8 +18,9 @@ class _EditarContatoPageState extends State<EditarContatoPage> {
   bool _loading = true, _saving = false, _loaded = false;
   String? _error;
   Map<String, dynamic> _original = {};
-  DocumentReference<Map<String, dynamic>> get _ref =>
-      StoreEnvironment.database.collection('institucional').doc('contato');
+  DocumentReference<Map<String, dynamic>> get _ref => StoreEnvironment.database
+      .collection(StoreEnvironment.collectionName('institucional'))
+      .doc('contato');
   @override
   void initState() {
     super.initState();

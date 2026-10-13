@@ -35,7 +35,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
   @override
   void initState() {
     super.initState();
-    _orderId = _firestore.collection('pedidos').doc().id;
+    _orderId = _firestore
+        .collection(StoreEnvironment.collectionName('pedidos'))
+        .doc()
+        .id;
     _loadProfile();
   }
 
@@ -54,7 +57,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       if (user == null)
         throw StateError('Entre na sua conta para registrar o pedido.');
       final snapshot = await _firestore
-          .collection('usuarios')
+          .collection(StoreEnvironment.collectionName('usuarios'))
           .doc(user.uid)
           .get();
       final data = snapshot.data() ?? {};
@@ -146,7 +149,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   Future<void> _whatsapp() async {
     try {
       final contact = await _firestore
-          .collection('institucional')
+          .collection(StoreEnvironment.collectionName('institucional'))
           .doc('contato')
           .get();
       final phone = whatsappPhone(

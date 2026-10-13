@@ -1,4 +1,4 @@
-﻿{
+{
     "flutter":  {
                     "platforms":  {
                                       "android":  {
@@ -22,18 +22,10 @@
                                                }
                                   }
                 },
-    "firestore":  [
-                      {
-                          "database":  "(default)",
-                          "rules":  "firestore.rules",
-                          "indexes":  "firestore.indexes.json"
-                      },
-                      {
-                          "database":  "benta-teste",
-                          "rules":  "firestore.rules",
-                          "indexes":  "firestore.indexes.json"
-                      }
-                  ],
+    "firestore":  {
+                      "indexes":  "firestore.indexes.json",
+                      "rules":  "firestore.rules"
+                  },
     "hosting":  [
                     {
                         "site":  "benta-lacos",

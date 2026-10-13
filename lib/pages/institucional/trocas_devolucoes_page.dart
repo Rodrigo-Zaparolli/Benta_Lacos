@@ -20,7 +20,9 @@ class TrocasDevolucoesPage extends StatelessWidget {
                 padding: const EdgeInsets.all(20),
                 child: StreamBuilder<DocumentSnapshot>(
                   stream: StoreEnvironment.database
-                      .collection('institucional')
+                      .collection(
+                        StoreEnvironment.collectionName('institucional'),
+                      )
                       .doc('trocas')
                       .snapshots(),
                   builder: (context, snapshot) {

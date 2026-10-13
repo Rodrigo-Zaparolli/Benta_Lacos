@@ -21,8 +21,9 @@ class _GestaoDepoimentosPageState extends State<GestaoDepoimentosPage> {
     _reload();
   }
 
-  void _reload() =>
-      _stream = StoreEnvironment.database.collection('depoimentos').snapshots();
+  void _reload() => _stream = StoreEnvironment.database
+      .collection(StoreEnvironment.collectionName('depoimentos'))
+      .snapshots();
   Future<void> _change(String id, {bool? approved, bool? archived}) async {
     if (_busy.contains(id)) return;
     if (archived == true &&
@@ -34,7 +35,9 @@ class _GestaoDepoimentosPageState extends State<GestaoDepoimentosPage> {
       return;
     setState(() => _busy.add(id));
     try {
-      final ref = StoreEnvironment.database.collection('depoimentos').doc(id);
+      final ref = StoreEnvironment.database
+          .collection(StoreEnvironment.collectionName('depoimentos'))
+          .doc(id);
       await StoreEnvironment.database.runTransaction((t) async {
         final doc = await t.get(ref);
         if (!doc.exists) throw StateError('Depoimento não encontrado.');

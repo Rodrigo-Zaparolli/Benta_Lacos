@@ -94,7 +94,7 @@ class _AdminPageState extends State<AdminPage> {
         _roleStream = null;
       }
       _roleStream ??= StoreEnvironment.database
-          .collection('usuarios')
+          .collection(StoreEnvironment.collectionName('usuarios'))
           .doc(auth.data!.uid)
           .snapshots();
       return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(

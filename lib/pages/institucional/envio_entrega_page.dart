@@ -20,7 +20,9 @@ class EnvioEntregaPage extends StatelessWidget {
                 padding: const EdgeInsets.all(20),
                 child: StreamBuilder<DocumentSnapshot>(
                   stream: StoreEnvironment.database
-                      .collection('institucional')
+                      .collection(
+                        StoreEnvironment.collectionName('institucional'),
+                      )
                       .doc('envio') // ID do documento no Firestore
                       .snapshots(),
                   builder: (context, snapshot) {

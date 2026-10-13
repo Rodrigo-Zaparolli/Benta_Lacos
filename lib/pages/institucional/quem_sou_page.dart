@@ -23,7 +23,9 @@ class QuemSouPage extends StatelessWidget {
                 ),
                 child: StreamBuilder<DocumentSnapshot>(
                   stream: StoreEnvironment.database
-                      .collection('institucional')
+                      .collection(
+                        StoreEnvironment.collectionName('institucional'),
+                      )
                       .doc('quem_sou')
                       .snapshots(),
                   builder: (context, snapshot) {

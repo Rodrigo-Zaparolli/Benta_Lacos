@@ -43,7 +43,9 @@ class OrderService {
     required String delivery,
     required String payment,
   }) => _runValidatedTransaction((transaction) async {
-    final reference = firestore.collection('pedidos').doc(id);
+    final reference = firestore
+        .collection(StoreEnvironment.collectionName('pedidos'))
+        .doc(id);
     final existing = await transaction.get(reference);
     if (existing.exists) {
       if (existing.data()?['clienteId'] != uid)
@@ -59,7 +61,9 @@ class OrderService {
     double subtotal = 0;
     for (final item in items) {
       final snapshot = await transaction.get(
-        firestore.collection('produtos').doc(item.product.id),
+        firestore
+            .collection(StoreEnvironment.collectionName('produtos'))
+            .doc(item.product.id),
       );
       final product = snapshot.data();
       if (product == null ||
@@ -134,14 +138,14 @@ class OrderService {
     for (final item in items) {
       transaction.delete(
         firestore
-            .collection('usuarios')
+            .collection(StoreEnvironment.collectionName('usuarios'))
             .doc(uid)
             .collection('carrinho')
             .doc(item.product.id),
       );
       transaction.delete(
         firestore
-            .collection('usuarios')
+            .collection(StoreEnvironment.collectionName('usuarios'))
             .doc(uid)
             .collection('favoritos')
             .doc(item.product.id),
@@ -159,7 +163,9 @@ class OrderService {
     String? cancellationReason,
     String? requestedBy,
   }) => _runValidatedTransaction((transaction) async {
-    final reference = firestore.collection('pedidos').doc(id);
+    final reference = firestore
+        .collection(StoreEnvironment.collectionName('pedidos'))
+        .doc(id);
     final snapshot = await transaction.get(reference);
     final order = snapshot.data();
     if (order == null) throw StateError('Pedido não encontrado.');
@@ -204,7 +210,10 @@ class OrderService {
           ['Pago', 'Enviado', 'Entregue'].contains(order['status']))
         'pagamentoLegado': true,
       if (status == 'Cancelado') 'cancelamento': event,
-      if (status == 'Cancelado' && (order['pagamentoConfirmado'] != null || order['pagamentoLegado'] == true || ['Pago','Enviado','Entregue'].contains(order['status'])))
+      if (status == 'Cancelado' &&
+          (order['pagamentoConfirmado'] != null ||
+              order['pagamentoLegado'] == true ||
+              ['Pago', 'Enviado', 'Entregue'].contains(order['status'])))
         'reembolso': 'A verificar',
       if (status == 'Aceito' || status == 'Fabricado')
         'fluxoPedido': 'fabricacao',
@@ -254,7 +263,7 @@ class OrderService {
       for (final line in List<Map<String, dynamic>>.from(order['itens'])) {
         if (line['sobEncomenda'] == true) continue;
         final productRef = firestore
-            .collection('produtos')
+            .collection(StoreEnvironment.collectionName('produtos'))
             .doc(line['id'] as String);
         final product = await transaction.get(productRef);
         if (!product.exists)
@@ -304,7 +313,9 @@ class OrderService {
     if (!amount.isFinite || amount < 0)
       throw StateError('Informe um frete válido.');
     await _runValidatedTransaction((t) async {
-      final ref = firestore.collection('pedidos').doc(id);
+      final ref = firestore
+          .collection(StoreEnvironment.collectionName('pedidos'))
+          .doc(id);
       final snapshot = await t.get(ref);
       final order = snapshot.data();
       if (order == null ||
@@ -326,8 +337,10 @@ class OrderService {
     });
   }
 
-  Future<void> setArchived(String id, bool archived) =>
-      firestore.collection('pedidos').doc(id).update({
+  Future<void> setArchived(String id, bool archived) => firestore
+      .collection(StoreEnvironment.collectionName('pedidos'))
+      .doc(id)
+      .update({
         'arquivado': archived,
         'updatedAt': FieldValue.serverTimestamp(),
         'historico': FieldValue.arrayUnion([
@@ -335,8 +348,10 @@ class OrderService {
         ]),
       });
 
-  Future<void> markPickupNoticeSent(String id) =>
-      firestore.collection('pedidos').doc(id).update({
+  Future<void> markPickupNoticeSent(String id) => firestore
+      .collection(StoreEnvironment.collectionName('pedidos'))
+      .doc(id)
+      .update({
         'avisoRetirada.status': 'enviado_manual',
         'avisoRetirada.data': FieldValue.serverTimestamp(),
         'historico': FieldValue.arrayUnion([
@@ -350,16 +365,23 @@ class OrderService {
     String id, {
     DateTime? deadline,
     required String instructions,
-  }) => firestore.collection('pedidos').doc(id).update({
-    'previsaoConclusao': deadline == null ? null : Timestamp.fromDate(deadline),
-    'instrucoesEntrega': instructions.trim(),
-    'historico': FieldValue.arrayUnion([
-      auditEntry('Prazo e instruções atualizados'),
-    ]),
-  });
+  }) => firestore
+      .collection(StoreEnvironment.collectionName('pedidos'))
+      .doc(id)
+      .update({
+        'previsaoConclusao': deadline == null
+            ? null
+            : Timestamp.fromDate(deadline),
+        'instrucoesEntrega': instructions.trim(),
+        'historico': FieldValue.arrayUnion([
+          auditEntry('Prazo e instruções atualizados'),
+        ]),
+      });
 
-  Future<void> confirmRefund(String id) =>
-      firestore.collection('pedidos').doc(id).update({
+  Future<void> confirmRefund(String id) => firestore
+      .collection(StoreEnvironment.collectionName('pedidos'))
+      .doc(id)
+      .update({
         'reembolso': 'Confirmado',
         'dataReembolso': FieldValue.serverTimestamp(),
         'historico': FieldValue.arrayUnion([

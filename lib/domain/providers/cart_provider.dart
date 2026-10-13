@@ -81,7 +81,7 @@ class CartProvider with ChangeNotifier {
         final batch = _firestore.batch();
         for (var item in itensParaRemover) {
           final cartRef = _firestore
-              .collection('usuarios')
+              .collection(StoreEnvironment.collectionName('usuarios'))
               .doc(user.uid)
               .collection('carrinho')
               .doc(item.product.id);
@@ -118,12 +118,12 @@ class CartProvider with ChangeNotifier {
   Future<void> _loadCart(String uid) async {
     try {
       final cartSnapshot = await _firestore
-          .collection('usuarios')
+          .collection(StoreEnvironment.collectionName('usuarios'))
           .doc(uid)
           .collection('carrinho')
           .get();
       final favSnapshot = await _firestore
-          .collection('usuarios')
+          .collection(StoreEnvironment.collectionName('usuarios'))
           .doc(uid)
           .collection('favoritos')
           .get();
@@ -172,7 +172,7 @@ class CartProvider with ChangeNotifier {
 
         for (var item in _items) {
           final favRef = _firestore
-              .collection('usuarios')
+              .collection(StoreEnvironment.collectionName('usuarios'))
               .doc(user.uid)
               .collection('favoritos')
               .doc(item.product.id);
@@ -180,7 +180,7 @@ class CartProvider with ChangeNotifier {
           batch.set(favRef, item.toMap()); // ✅ MELHORADO
 
           final cartRef = _firestore
-              .collection('usuarios')
+              .collection(StoreEnvironment.collectionName('usuarios'))
               .doc(user.uid)
               .collection('carrinho')
               .doc(item.product.id);
@@ -234,7 +234,7 @@ class CartProvider with ChangeNotifier {
 
     if (user != null) {
       _firestore
-          .collection('usuarios')
+          .collection(StoreEnvironment.collectionName('usuarios'))
           .doc(user.uid)
           .collection('carrinho')
           .doc(productId)
@@ -249,7 +249,7 @@ class CartProvider with ChangeNotifier {
     if (user == null) return;
     try {
       await _firestore
-          .collection('usuarios')
+          .collection(StoreEnvironment.collectionName('usuarios'))
           .doc(user.uid)
           .collection('carrinho')
           .doc(item.product.id)

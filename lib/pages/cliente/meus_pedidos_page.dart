@@ -55,7 +55,9 @@ class MeusPedidosPage extends StatelessWidget {
                       else
                         StreamBuilder<QuerySnapshot>(
                           stream: StoreEnvironment.database
-                              .collection('pedidos')
+                              .collection(
+                                StoreEnvironment.collectionName('pedidos'),
+                              )
                               .where('clienteId', isEqualTo: user.uid)
                               .orderBy('dataPedido', descending: true)
                               .snapshots(),

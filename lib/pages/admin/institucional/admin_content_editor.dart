@@ -28,7 +28,7 @@ class _AdminContentEditorState extends State<AdminContentEditor> {
   bool _loading = true, _saving = false, _loaded = false;
   String? _error;
   DocumentReference<Map<String, dynamic>> get _ref => StoreEnvironment.database
-      .collection('institucional')
+      .collection(StoreEnvironment.collectionName('institucional'))
       .doc(widget.documentId);
   @override
   void initState() {
